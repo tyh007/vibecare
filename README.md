@@ -24,7 +24,7 @@ The project began as a rapid collaborative build. This repository is a carefully
 
 ### Collaboration
 
-VibeCare was created with a teammate.
+VibeCare was created with 3 teammates.
 
 
 ## Product direction
