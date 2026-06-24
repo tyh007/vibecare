@@ -12,7 +12,7 @@
 
 University life asks students to manage academic pressure, personal routines, social connection, and emotional wellbeing across tools that rarely speak to one another. VibeCare explores a more coherent experience: a calendar-first workspace where lightweight mood reflection and support appear in the context of a student's actual day.
 
-The project began as a rapid collaborative build. This repository is a carefully reconstructed portfolio edition: the strongest product direction is preserved, duplicate experiments and exposed configuration are removed, and the implementation is documented with clearer safety and privacy boundaries.
+The project began as a rapid collaborative build. This repository is a carefully reconstructed portfolio edition for presentation use: the strongest product direction is preserved, duplicate experiments and exposed configuration are removed, and the implementation is documented with clearer safety and privacy boundaries.
 
 ### My role
 
