@@ -12,23 +12,37 @@ import { LocationChart } from "@/components/LocationChart";
 import { MoodMap } from "@/components/MoodMap";
 import { PixelAvatar } from "@/components/PixelAvatar";
 import { initializeMockData } from "@/utils/mockData";
+import {
+  readLocalArray,
+  type LocationChartDatum,
+  type MapLocationDatum,
+  type MoodEntry,
+  type ScreenTimeEntry,
+} from "@/types/wellbeing";
+
+interface LocationStats {
+  moods: number[];
+  screenTimes: number[];
+  count: number;
+}
 
 const MoodDashboard = () => {
   const navigate = useNavigate();
-  const [locationData, setLocationData] = useState<any[]>([]);
-  const [mapLocationData, setMapLocationData] = useState<any[]>([]);
+  const [locationData, setLocationData] = useState<LocationChartDatum[]>([]);
+  const [mapLocationData, setMapLocationData] = useState<MapLocationDatum[]>([]);
 
   useEffect(() => {
     initializeMockData();
 
     // Calculate location statistics
-    const moodEntries = JSON.parse(localStorage.getItem("moodEntries") || "[]");
-    const screenTimeEntries = JSON.parse(localStorage.getItem("screenTimeEntries") || "[]");
+    const moodEntries = readLocalArray<MoodEntry>("moodEntries");
+    const screenTimeEntries =
+      readLocalArray<ScreenTimeEntry>("screenTimeEntries");
 
-    const locationStats = new Map();
+    const locationStats = new Map<string, LocationStats>();
     
     // Aggregate mood data by location
-    moodEntries.forEach((entry: any) => {
+    moodEntries.forEach((entry) => {
       if (entry.location) {
         if (!locationStats.has(entry.location)) {
           locationStats.set(entry.location, { moods: [], screenTimes: [], count: 0 });
@@ -39,7 +53,7 @@ const MoodDashboard = () => {
     });
 
     // Aggregate screen time by location
-    screenTimeEntries.forEach((entry: any) => {
+    screenTimeEntries.forEach((entry) => {
       if (entry.location && locationStats.has(entry.location)) {
         locationStats.get(entry.location).screenTimes.push(entry.totalMinutes);
       }
@@ -59,7 +73,7 @@ const MoodDashboard = () => {
     };
 
     // Calculate averages for chart
-    const chartData = Array.from(locationStats.entries()).map(([location, stats]: [string, any]) => {
+    const chartData = Array.from(locationStats.entries()).map(([location, stats]) => {
       const avgMood = stats.moods.length > 0 
         ? stats.moods.reduce((a: number, b: number) => a + b, 0) / stats.moods.length 
         : 0;
@@ -80,7 +94,7 @@ const MoodDashboard = () => {
     // Calculate data for map
     const mapData = Array.from(locationStats.entries())
       .filter(([location]) => locationCoordinates[location])
-      .map(([location, stats]: [string, any]) => {
+      .map(([location, stats]) => {
         const avgMood = stats.moods.length > 0 
           ? stats.moods.reduce((a: number, b: number) => a + b, 0) / stats.moods.length 
           : 0;

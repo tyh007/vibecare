@@ -62,10 +62,11 @@ const Onboarding = () => {
                     <input type="checkbox" id="consent-data" className="mt-1" defaultChecked />
                     <div>
                       <Label htmlFor="consent-data" className="font-medium cursor-pointer">
-                        Store my calendar and mood data securely
+                        Store my calendar and mood data in my account
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Encrypted and accessible only to you. Required for core features.
+                        Stored in Supabase and protected by the database access
+                        policies included with this prototype.
                       </p>
                     </div>
                   </div>
@@ -76,10 +77,10 @@ const Onboarding = () => {
                     <input type="checkbox" id="consent-browsing" className="mt-1" />
                     <div>
                       <Label htmlFor="consent-browsing" className="font-medium cursor-pointer">
-                        Enable browsing supervision (optional)
+                        Enable optional wellbeing reminders
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        On-device content analysis with gentle warnings. You control what's tracked.
+                        Prototype preference only; browser activity is not collected.
                       </p>
                     </div>
                   </div>
@@ -93,7 +94,7 @@ const Onboarding = () => {
                         Share anonymous usage data to improve VibeCare
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Help us make the app better. No personal information shared.
+                        Prototype preference only; analytics are not configured in this repository.
                       </p>
                     </div>
                   </div>
@@ -113,9 +114,9 @@ const Onboarding = () => {
                 <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto">
                   <Heart className="w-8 h-8 text-secondary" />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground">Safety First</h2>
+                <h2 className="text-2xl font-bold text-foreground">Build a Support Plan</h2>
                 <p className="text-muted-foreground">
-                  Add an emergency contact who we can notify if you're in crisis (optional but recommended).
+                  Note someone you would choose to contact when you need support.
                 </p>
               </div>
 
@@ -147,10 +148,11 @@ const Onboarding = () => {
                 </div>
 
                 <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                  <p className="text-sm text-foreground font-medium mb-2">When will they be contacted?</p>
+                  <p className="text-sm text-foreground font-medium mb-2">Prototype limitation</p>
                   <p className="text-sm text-muted-foreground">
-                    Only if you explicitly trigger an alert or if VibeCare detects serious crisis indicators. 
-                    You stay in control.
+                    VibeCare does not automatically contact this person or
+                    monitor for emergencies. This screen demonstrates a
+                    user-controlled support-plan concept.
                   </p>
                 </div>
               </div>
@@ -235,7 +237,8 @@ const Onboarding = () => {
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <p className="text-sm text-muted-foreground">
                     💡 This baseline helps VibeCare track your progress and personalize suggestions. 
-                    Your responses are private and encrypted.
+                    Access is governed by the Supabase policies supplied with
+                    this prototype; review them before using real personal data.
                   </p>
                 </div>
               </div>

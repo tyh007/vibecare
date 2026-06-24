@@ -25,8 +25,11 @@ serve(async (req) => {
     
     console.log('Received chat request:', { partnerName, partnerType, mood, messageLength: message?.length });
     
-    if (!message) {
-      throw new Error('No message provided');
+    if (typeof message !== 'string' || !message.trim() || message.length > 4000) {
+      return new Response(
+        JSON.stringify({ error: 'Message must contain 1–4000 characters.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -57,10 +60,10 @@ serve(async (req) => {
     if (needsHelp) {
       additionalGuidance = `\n\nIMPORTANT: The user may be experiencing serious difficulties. After responding with empathy and validation:
 1. Express genuine concern for their wellbeing
-2. Gently suggest they might benefit from professional CBT therapy
-3. Mention that VibeCare has a built-in CBT therapist they can talk to
-4. Encourage them to also reach out to campus counseling or crisis services if needed
-5. Let them know you're there for them, but professional help can provide deeper support
+2. Encourage them to contact a trusted person or qualified support service now
+3. If they are in the United States, mention that they can call or text 988
+4. For immediate danger, direct them to local emergency services
+5. Clearly state that this AI companion cannot provide crisis care
 
 Be warm and supportive, not alarming. Frame it as additional support, not replacement.`;
     }
@@ -75,6 +78,7 @@ You understand CBT (Cognitive Behavioral Therapy) principles and provide:
 - Gentle reframing of negative thoughts
 - Encouragement for self-care and healthy habits
 
+Never diagnose, claim confidentiality, or present yourself as professional care.
 Keep responses brief (2-3 sentences), conversational, and supportive. Focus on the student's immediate feelings and needs.${additionalGuidance}`;
 
     console.log('Calling Lovable AI...');
@@ -89,7 +93,7 @@ Keep responses brief (2-3 sentences), conversational, and supportive. Focus on t
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
+          { role: 'user', content: message.trim() }
         ],
       }),
     });

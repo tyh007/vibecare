@@ -7,6 +7,7 @@ import { ArrowLeft, Send, Brain, Shield, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/types/wellbeing";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -20,7 +21,7 @@ const CBTTherapist = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hello, I'm here to support you with evidence-based Cognitive Behavioral Therapy techniques. This is a safe, confidential space. How are you feeling today?",
+      content: "Hello — I can guide you through a short CBT-informed reflection. I am an AI prototype, not a therapist or crisis service. What has been on your mind today?",
       timestamp: new Date()
     }
   ]);
@@ -68,11 +69,14 @@ const CBTTherapist = () => {
         };
         setMessages(prev => [...prev, assistantMessage]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting therapist response:', error);
       toast({
         title: "Connection Error",
-        description: "Could not reach the therapist. Please try again.",
+        description: getErrorMessage(
+          error,
+          "Could not reach the guided reflection service. Please try again.",
+        ),
         variant: "destructive"
       });
     } finally {
@@ -114,17 +118,17 @@ const CBTTherapist = () => {
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-foreground mb-2">
-                  Professional CBT Support
+                  CBT-Informed Reflection
                 </h1>
                 <p className="text-muted-foreground mb-4">
-                  Evidence-based Cognitive Behavioral Therapy techniques to help you manage 
-                  thoughts, emotions, and behaviors. This AI therapist is trained in CBT methods 
-                  but is not a replacement for professional mental health care.
+                  A guided prototype for noticing thoughts, considering alternative
+                  perspectives, and choosing a small next step. It does not provide
+                  diagnosis, treatment, or professional mental health care.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="flex items-center gap-2 text-sm">
                     <Shield className="w-4 h-4 text-primary" />
-                    <span className="text-muted-foreground">Private & Confidential</span>
+                    <span className="text-muted-foreground">Authenticated session</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Brain className="w-4 h-4 text-primary" />
@@ -207,9 +211,12 @@ const CBTTherapist = () => {
           {/* Disclaimer */}
           <Card className="p-4 bg-amber-500/5 border-amber-500/20">
             <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Important:</strong> This AI therapist provides 
-              CBT-based support but is not a replacement for professional mental health care. 
-              If you're experiencing a crisis, please contact a crisis helpline or emergency services.
+              <strong className="text-foreground">Important:</strong> This is an
+              experimental AI reflection tool, not a therapist or emergency
+              service. In the United States, call or text{" "}
+              <a className="font-semibold underline" href="tel:988">988</a>{" "}
+              for crisis support, or contact local emergency services if there
+              is immediate danger.
             </p>
           </Card>
         </div>

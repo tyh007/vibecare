@@ -20,7 +20,7 @@ const Index = () => {
             <div className="space-y-8 text-center lg:text-left animate-fade-in">
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full glass border-2 border-primary/20 shadow-medium animate-slide-in-right">
                 <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-sm font-bold text-primary">Your Personal Wellness Partner</span>
+                <span className="text-sm font-bold text-primary">Student Wellbeing Prototype</span>
               </div>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-foreground leading-tight">
@@ -31,7 +31,9 @@ const Index = () => {
               </h1>
               
               <p className="text-xl md:text-2xl text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                VibeCare helps college students reduce anxiety and boost well-being through calendar-first planning, gentle mood tracking, and personalized micro-interventions.
+                VibeCare explores how calendar-first planning, gentle mood
+                reflection, and small suggested actions can live in one
+                student-focused experience.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
@@ -41,7 +43,7 @@ const Index = () => {
                   onClick={() => navigate('/auth')}
                   className="group"
                 >
-                  Get Started Free
+                  Explore VibeCare
                   <Sparkles className="ml-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
                 </Button>
                 <Button 
@@ -58,7 +60,7 @@ const Index = () => {
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Shield className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="font-medium">Privacy-first</span>
+                  <span className="font-medium">Privacy-aware</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
@@ -91,10 +93,11 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-20 space-y-6 animate-fade-in">
             <h2 className="text-4xl md:text-5xl font-display font-bold gradient-text">
-              Everything you need to thrive
+              One connected daily experience
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              VibeCare combines powerful tools in one privacy-first platform designed specifically for college students.
+              The prototype connects planning, reflection, AI-guided prompts,
+              and peer support around the realities of student life.
             </p>
           </div>
           
@@ -139,7 +142,9 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-display font-bold text-card-foreground">Privacy-First Design</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Your data is yours. Granular consent controls, encrypted storage, and optional browsing supervision with on-device processing.
+                Account-scoped data access, explicit preferences, and a
+                documented Supabase policy model make privacy decisions visible
+                in the prototype.
               </p>
             </Card>
 
@@ -150,7 +155,8 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-display font-bold text-card-foreground">Unified Exports</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Generate comprehensive PDF exports of your semester—schedule, notes, mood trends—perfect for sharing with counselors.
+                Bring schedule, notes, and mood trends into one reviewable
+                workspace, reducing the effort required to spot patterns.
               </p>
             </Card>
 
@@ -223,7 +229,8 @@ const Index = () => {
               Ready to find your balance?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Join students who are taking control of their mental wellness with calendar-first planning and gentle support.
+              Explore a collaborative prototype for calendar-first planning,
+              reflection, and gentle support.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button 
@@ -237,7 +244,7 @@ const Index = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground pt-4">
-              Free to start • Privacy-first • No credit card required
+              Portfolio prototype • Supabase configuration required
             </p>
           </Card>
         </div>
@@ -261,31 +268,30 @@ const Index = () => {
               <h4 className="font-semibold text-foreground">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
+                <li><a href="https://github.com/tyh007/vibecare" className="hover:text-primary transition-colors">Source code</a></li>
+                <li><a href="https://github.com/tyh007/vibecare#limitations" className="hover:text-primary transition-colors">Limitations</a></li>
               </ul>
             </div>
             
             <div className="space-y-4">
               <h4 className="font-semibold text-foreground">Resources</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Crisis Resources</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
+                <li><a href="https://988lifeline.org/" className="hover:text-primary transition-colors">988 Lifeline</a></li>
+                <li><a href="https://github.com/tyh007/vibecare#safety--privacy" className="hover:text-primary transition-colors">Safety & privacy</a></li>
               </ul>
             </div>
             
             <div className="space-y-4">
               <h4 className="font-semibold text-foreground">Connect</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Support</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
+                <li><a href="https://github.com/tyh007/vibecare/issues" className="hover:text-primary transition-colors">Issues</a></li>
+                <li><a href="https://github.com/tyh007" className="hover:text-primary transition-colors">GitHub</a></li>
               </ul>
             </div>
           </div>
           
           <div className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            <p>© 2025 VibeCare. A wellness companion, not a replacement for professional mental health care.</p>
+            <p>© 2026 VibeCare prototype. Not medical care or an emergency service.</p>
           </div>
         </div>
       </footer>

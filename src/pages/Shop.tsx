@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Heart } from "lucide-react";
+import { getErrorMessage } from "@/types/wellbeing";
 
 interface ShopItem {
   id: string;
@@ -31,7 +32,14 @@ const categoryIcons = {
   accessory: "✨"
 };
 
-const itemDisplayIcons: Record<string, any> = {
+interface ItemDisplay {
+  color?: string;
+  shade?: string;
+  emoji?: string;
+  label?: string;
+}
+
+const itemDisplayIcons: Record<string, ItemDisplay> = {
   // Hair colors
   brown: { color: "#8B5A2B", shade: "#6B4423" },
   black: { color: "#2d2d2d", shade: "#1a1a1a" },
@@ -164,6 +172,8 @@ const Shop = () => {
 
   useEffect(() => {
     loadShopData();
+    // Initial inventory hydration should only run once for the active session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadShopData = async () => {
@@ -252,10 +262,10 @@ const Shop = () => {
       });
 
       loadShopData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Purchase failed",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -324,10 +334,10 @@ const Shop = () => {
       });
 
       await loadShopData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     }

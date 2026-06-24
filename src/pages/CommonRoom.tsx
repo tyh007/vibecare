@@ -83,6 +83,9 @@ const CommonRoom = () => {
       subscription.unsubscribe();
       supabase.removeChannel(channel);
     };
+    // Realtime subscriptions call the latest loader; recreating them on each
+    // render would produce duplicate channels.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   useEffect(() => {
@@ -163,11 +166,11 @@ const CommonRoom = () => {
       if (moderation?.requiresIntervention) {
         toast({
           title: "We're here for you",
-          description: "Your message indicates you may be in distress. Please consider reaching out to our professional CBT therapist or a crisis hotline.",
+          description: "Automated moderation marked this message as potentially concerning. Consider contacting someone you trust or a qualified crisis service.",
           variant: "destructive",
           action: (
             <Button variant="outline" size="sm" onClick={() => navigate('/cbt-therapist')}>
-              Talk to Therapist
+              Open Reflection Tool
             </Button>
           ),
         });
@@ -238,10 +241,12 @@ const CommonRoom = () => {
             <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-foreground">
-                AI-Monitored Safe Space
+                AI-Assisted Moderation
               </p>
               <p className="text-xs text-muted-foreground">
-                This community is monitored by AI to detect concerning content. If you're in crisis, please reach out to our CBT therapist or call a crisis hotline.
+                Automated moderation can make mistakes and is not a crisis
+                response service. In the U.S., call or text 988 for crisis
+                support; contact local emergency services for immediate danger.
               </p>
             </div>
           </div>

@@ -25,8 +25,11 @@ serve(async (req) => {
     
     console.log('Received CBT therapist request:', { messageLength: message?.length, historyLength: conversationHistory?.length });
     
-    if (!message) {
-      throw new Error('No message provided');
+    if (typeof message !== 'string' || !message.trim() || message.length > 4000) {
+      return new Response(
+        JSON.stringify({ error: 'Message must contain 1–4000 characters.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -34,9 +37,9 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are a professional CBT (Cognitive Behavioral Therapy) therapist AI assistant helping college students.
+    const systemPrompt = `You are an AI reflection guide for a student wellbeing prototype. You are not a therapist, clinician, crisis counselor, or medical service.
 
-Your therapeutic approach:
+Your CBT-informed reflection approach:
 1. **Identify Cognitive Distortions**: Help users recognize negative thought patterns (catastrophizing, black-and-white thinking, overgeneralization, etc.)
 2. **Challenge Thoughts**: Guide them to question and reframe unhelpful thoughts with evidence
 3. **Behavioral Activation**: Encourage activities that improve mood and well-being
@@ -47,8 +50,8 @@ Core CBT Techniques to Use:
 - Socratic questioning to help users discover insights
 - Thought records to track and challenge automatic thoughts
 - Behavioral experiments to test beliefs
-- Graded exposure for anxiety
-- Activity scheduling for depression
+- Small, low-risk behavioral experiments
+- Activity scheduling for everyday wellbeing
 - Relaxation and breathing techniques
 
 Communication Style:
@@ -60,9 +63,9 @@ Communication Style:
 - Give concrete, actionable suggestions
 
 Safety Protocols:
-- If detecting severe depression, suicidal ideation, or crisis: Strongly encourage immediate professional help (crisis hotline, emergency services, campus counseling)
-- For serious symptoms: Recommend in-person therapy alongside this support
-- Always clarify you're an AI tool, not a replacement for human therapists
+- If the user mentions self-harm, suicide, or immediate danger: do not continue the exercise. Encourage immediate contact with local emergency services or a qualified crisis service; mention 988 only for users in the United States.
+- Never diagnose, claim confidentiality, promise safety, or imply professional credentials.
+- Encourage qualified human support when needs exceed everyday reflection.
 
 Keep responses:
 - Concise (3-5 sentences typically)
@@ -70,14 +73,20 @@ Keep responses:
 - Collaborative and empowering
 - Evidence-based
 
-Remember: You're providing CBT-informed support, not formal diagnosis or treatment.`;
+Remember: You provide general, CBT-informed reflection prompts, not diagnosis or treatment.`;
 
     console.log('Calling Lovable AI for CBT response...');
     
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...(conversationHistory || []),
-      { role: 'user', content: message }
+      ...(Array.isArray(conversationHistory)
+        ? conversationHistory.slice(-12).filter((item) =>
+            item &&
+            (item.role === 'user' || item.role === 'assistant') &&
+            typeof item.content === 'string'
+          )
+        : []),
+      { role: 'user', content: message.trim() }
     ];
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -116,7 +125,7 @@ Remember: You're providing CBT-informed support, not formal diagnosis or treatme
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
     
-    console.log('CBT therapist response received successfully');
+    console.log('CBT-informed reflection response received successfully');
 
     return new Response(
       JSON.stringify({ response: aiResponse }),

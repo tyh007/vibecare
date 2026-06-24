@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 interface RewardState {
   points: number;
@@ -36,6 +37,8 @@ export const useRewardSystem = () => {
   // Load from database on mount
   useEffect(() => {
     loadRewardState();
+    // The loader is intentionally run once; auth changes are handled by Supabase.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadRewardState = async () => {
@@ -66,7 +69,9 @@ export const useRewardSystem = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const dbUpdates: any = { coins: newPoints };
+    const dbUpdates: Database["public"]["Tables"]["profiles"]["Update"] = {
+      coins: newPoints,
+    };
     
     if (updates.streak !== undefined) dbUpdates.current_streak = updates.streak;
     if (updates.totalCheckIns !== undefined) dbUpdates.total_check_ins = updates.totalCheckIns;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { TrendingUp, Calendar, Smile, Target } from "lucide-react";
+import { readLocalArray, type MoodEntry } from "@/types/wellbeing";
 
 export const StatsCards = () => {
   const [stats, setStats] = useState({
@@ -11,16 +12,16 @@ export const StatsCards = () => {
   });
 
   useEffect(() => {
-    const entries = JSON.parse(localStorage.getItem("moodEntries") || "[]");
+    const entries = readLocalArray<MoodEntry>("moodEntries");
     
     const total = entries.length;
     const avgMood = total > 0
-      ? (entries.reduce((sum: number, e: any) => sum + e.mood, 0) / total).toFixed(1)
+      ? (entries.reduce((sum, entry) => sum + entry.mood, 0) / total).toFixed(1)
       : 0;
     
     // Calculate streak (days with entries)
     const uniqueDays = new Set(
-      entries.map((e: any) => new Date(e.timestamp).toDateString())
+      entries.map((entry) => new Date(entry.timestamp).toDateString())
     ).size;
 
     setStats({

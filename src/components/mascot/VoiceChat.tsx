@@ -4,6 +4,33 @@ import { Mic, MicOff, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "@/types/wellbeing";
+
+interface SpeechRecognitionResultEvent {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+interface SpeechRecognitionWindow extends Window {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+}
 
 interface VoiceChatProps {
   partnerName: string;
@@ -15,27 +42,32 @@ interface VoiceChatProps {
 export const VoiceChat = ({ partnerName, partnerType, mood, onSpeakingChange }: VoiceChatProps) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const handleUserSpeechRef = useRef<(text: string) => Promise<void>>(
+    async () => undefined,
+  );
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Initialize Web Speech API
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    const speechWindow = window as SpeechRecognitionWindow;
+    const SpeechRecognition =
+      speechWindow.webkitSpeechRecognition ?? speechWindow.SpeechRecognition;
+
+    if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onresult = async (event: any) => {
+      recognitionRef.current.onresult = async (event) => {
         const transcript = event.results[0][0].transcript;
-        console.log('Recognized:', transcript);
-        await handleUserSpeech(transcript);
+        await handleUserSpeechRef.current(transcript);
       };
 
-      recognitionRef.current.onerror = (event: any) => {
+      recognitionRef.current.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
         toast({
@@ -60,7 +92,7 @@ export const VoiceChat = ({ partnerName, partnerType, mood, onSpeakingChange }: 
         synthRef.current.cancel();
       }
     };
-  }, []);
+  }, [toast]);
 
   const handleUserSpeech = async (text: string) => {
     try {
@@ -81,32 +113,34 @@ export const VoiceChat = ({ partnerName, partnerType, mood, onSpeakingChange }: 
         console.log('AI response:', data.response);
         await speak(data.response);
 
-        // Show professional help suggestion if needed
+        // Surface additional support when the prototype detects concerning language.
         if (data.suggestProfessionalHelp) {
           toast({
-            title: "Professional Support Available",
-            description: "Consider talking to our CBT therapist for deeper support.",
+            title: "Additional support may help",
+            description: "Consider contacting someone you trust or a qualified support service.",
             action: (
               <Button 
                 size="sm" 
                 onClick={() => navigate('/cbt-therapist')}
               >
-                Talk to CBT Therapist
+                Open Reflection Tool
               </Button>
             ),
             duration: 10000,
           });
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting AI response:', error);
       toast({
         title: "Chat Error",
-        description: error.message || "Could not get response. Please try again.",
+        description: getErrorMessage(error, "Could not get a response. Please try again."),
         variant: "destructive"
       });
     }
   };
+
+  handleUserSpeechRef.current = handleUserSpeech;
 
   const speak = async (text: string) => {
     if (!synthRef.current) return;

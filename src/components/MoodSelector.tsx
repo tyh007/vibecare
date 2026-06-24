@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { getErrorMessage } from "@/types/wellbeing";
 
 const moods = [
   { 
@@ -203,10 +204,10 @@ export const MoodSelector = () => {
       setScreenTime(120);
       setHydration(2000);
       setLocation("");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     }

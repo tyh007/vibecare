@@ -1,4 +1,4 @@
-project_id = "vucitsciqcnanaxszdxj"
+project_id = "vibecare"
 
 [functions.vibe-partner-chat]
 verify_jwt = true

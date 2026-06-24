@@ -62,7 +62,11 @@ const Dashboard = () => {
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>(() => {
     const saved = localStorage.getItem('vc_moods');
     if (saved) {
-      try { return JSON.parse(saved) as MoodEntry[]; } catch {}
+      try {
+        return JSON.parse(saved) as MoodEntry[];
+      } catch {
+        localStorage.removeItem("vc_moods");
+      }
     }
     return [
       { date: format(subDays(new Date(), 6), 'yyyy-MM-dd'), mood: 3, events: ['CS101 Lecture', 'Study Group'] },
@@ -78,7 +82,11 @@ const Dashboard = () => {
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
     const saved = localStorage.getItem('vc_events');
     if (saved) {
-      try { return JSON.parse(saved) as CalendarEvent[]; } catch {}
+      try {
+        return JSON.parse(saved) as CalendarEvent[];
+      } catch {
+        localStorage.removeItem("vc_events");
+      }
     }
     return [
       {
@@ -242,18 +250,26 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col w-full bg-forest">
       {/* Main Content Area with Resizable Panels */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Desktop: Resizable Layout */}
         <div className="hidden lg:flex flex-1">
           <ResizablePanelGroup direction="horizontal">
             {/* Central Calendar Panel */}
-            <ResizablePanel defaultSize={65} minSize={50}>
+            <ResizablePanel defaultSize={70} minSize={50}>
               <div className="h-full overflow-y-auto">
                 <div className="p-6 space-y-6">
                   {/* Vibe Partner */}
-                  <button
+                  <div
                     onClick={() => navigate('/vibe-partner')}
-                    className="w-full transition-opacity"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        navigate("/vibe-partner");
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="w-full cursor-pointer transition-opacity"
+                    aria-label="Open Vibe Partner"
                   >
                     <VibePartner
                       points={rewardSystem.points}
@@ -266,7 +282,7 @@ const Dashboard = () => {
                         setPartnerType((localStorage.getItem('vibePartnerType') as 'cat' | 'dog' | 'panda') || 'cat');
                       }}
                     />
-                  </button>
+                  </div>
 
                   <Card className="p-4 bg-card/75 backdrop-blur-sm">
                     <div className="flex items-center justify-between mb-3">
@@ -375,12 +391,20 @@ const Dashboard = () => {
         </div>
 
         {/* Mobile: Original Layout */}
-        <main className="flex-1 lg:hidden overflow-y-auto">
+        <main className="min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto lg:hidden">
           <div className="p-4 space-y-6">
             {/* Vibe Partner */}
-            <button
+            <div
               onClick={() => navigate('/vibe-partner')}
-              className="w-full transition-opacity"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  navigate("/vibe-partner");
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              className="w-full cursor-pointer transition-opacity"
+              aria-label="Open Vibe Partner"
             >
               <VibePartner
                 points={rewardSystem.points}
@@ -393,7 +417,7 @@ const Dashboard = () => {
                   setPartnerType((localStorage.getItem('vibePartnerType') as 'cat' | 'dog' | 'panda') || 'cat');
                 }}
               />
-            </button>
+            </div>
 
             <Card className="p-4 bg-card/75 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-3">

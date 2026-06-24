@@ -8,6 +8,7 @@ import { Heart, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getErrorMessage } from "@/types/wellbeing";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -61,11 +62,11 @@ const Auth = () => {
       
       // Navigate to onboarding after successful signup
       navigate('/onboarding');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Signup error:', error);
       toast({
         title: "Signup failed",
-        description: error.message || "Please try again.",
+        description: getErrorMessage(error, "Please try again."),
         variant: "destructive"
       });
     } finally {
@@ -95,11 +96,14 @@ const Auth = () => {
       });
       
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: getErrorMessage(
+          error,
+          "Please check your credentials and try again.",
+        ),
         variant: "destructive"
       });
     } finally {
@@ -241,7 +245,8 @@ const Auth = () => {
         {/* Privacy Notice */}
         <Card className="p-4 bg-muted/50 border-border">
           <p className="text-xs text-center text-muted-foreground">
-            🔒 Your data is encrypted and private. We never share your information without explicit consent.
+            Account access is handled by Supabase Auth. Review the repository's
+            data model and policies before using real personal information.
           </p>
         </Card>
       </div>

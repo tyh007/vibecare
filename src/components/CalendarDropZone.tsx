@@ -19,7 +19,7 @@ interface FreeSlot {
 
 interface CalendarDropZoneProps {
   events: CalendarEvent[];
-  onDropSuggestion: (suggestionData: any, slotStart: string) => void;
+  onDropSuggestion: (suggestionData: null, slotStart: string) => void;
 }
 
 // Detect free time slots

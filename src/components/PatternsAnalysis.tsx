@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import {
+  readLocalArray,
+  type HealthEntry,
+  type MoodEntry,
+  type ScreenTimeEntry,
+} from "@/types/wellbeing";
 
 interface Pattern {
   factor: string;
@@ -13,9 +19,10 @@ export const PatternsAnalysis = () => {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
 
   useEffect(() => {
-    const moodEntries = JSON.parse(localStorage.getItem("moodEntries") || "[]");
-    const healthEntries = JSON.parse(localStorage.getItem("healthEntries") || "[]");
-    const screenTimeEntries = JSON.parse(localStorage.getItem("screenTimeEntries") || "[]");
+    const moodEntries = readLocalArray<MoodEntry>("moodEntries");
+    const healthEntries = readLocalArray<HealthEntry>("healthEntries");
+    const screenTimeEntries =
+      readLocalArray<ScreenTimeEntry>("screenTimeEntries");
 
     const detectedPatterns: Pattern[] = [];
 
@@ -23,30 +30,30 @@ export const PatternsAnalysis = () => {
     if (healthEntries.length >= 3) {
       const sleepData = healthEntries
         .slice(0, 10)
-        .filter((e: any) => e.sleep)
-        .map((e: any) => ({
-          sleep: Number(e.sleep),
-          date: e.date,
+        .filter((entry) => entry.sleep)
+        .map((entry) => ({
+          sleep: Number(entry.sleep),
+          date: entry.date,
         }));
 
-      const moodsByDate = new Map();
-      moodEntries.forEach((m: any) => {
-        const date = new Date(m.timestamp).toLocaleDateString();
+      const moodsByDate = new Map<string, number[]>();
+      moodEntries.forEach((entry) => {
+        const date = new Date(entry.timestamp).toLocaleDateString();
         if (!moodsByDate.has(date)) {
           moodsByDate.set(date, []);
         }
-        moodsByDate.get(date).push(m.mood);
+        moodsByDate.get(date)?.push(entry.mood);
       });
 
       let goodSleepMood = 0;
       let badSleepMood = 0;
       
-      sleepData.forEach((s: any) => {
-        const moods = moodsByDate.get(s.date) || [];
+      sleepData.forEach((sleepEntry) => {
+        const moods = moodsByDate.get(sleepEntry.date) || [];
         const avgMood = moods.length > 0 ? moods.reduce((a: number, b: number) => a + b, 0) / moods.length : 0;
         
-        if (s.sleep >= 7 && avgMood > 0) goodSleepMood += avgMood;
-        if (s.sleep < 6 && avgMood > 0) badSleepMood += avgMood;
+        if (sleepEntry.sleep >= 7 && avgMood > 0) goodSleepMood += avgMood;
+        if (sleepEntry.sleep < 6 && avgMood > 0) badSleepMood += avgMood;
       });
 
       if (goodSleepMood > badSleepMood) {
@@ -66,7 +73,9 @@ export const PatternsAnalysis = () => {
 
     // Analyze exercise patterns
     if (healthEntries.length >= 3) {
-      const exerciseEntries = healthEntries.filter((e: any) => e.exercise && Number(e.exercise) > 0);
+      const exerciseEntries = healthEntries.filter(
+        (entry) => entry.exercise && Number(entry.exercise) > 0,
+      );
       if (exerciseEntries.length >= 2) {
         detectedPatterns.push({
           factor: "Physical Activity",
@@ -80,7 +89,8 @@ export const PatternsAnalysis = () => {
     if (screenTimeEntries.length >= 2) {
       const totalScreenTime = screenTimeEntries
         .slice(0, 5)
-        .reduce((sum: number, e: any) => sum + e.totalMinutes, 0) / screenTimeEntries.length;
+        .reduce((sum, entry) => sum + entry.totalMinutes, 0) /
+        screenTimeEntries.length;
 
       if (totalScreenTime > 180) {
         detectedPatterns.push({
@@ -91,14 +101,16 @@ export const PatternsAnalysis = () => {
       }
 
       // Check for specific high-usage apps
-      const allApps = screenTimeEntries.flatMap((e: any) => e.apps);
-      const appTotals = new Map();
-      allApps.forEach((app: any) => {
+      const allApps = screenTimeEntries.flatMap((entry) => entry.apps);
+      const appTotals = new Map<string, number>();
+      allApps.forEach((app) => {
         const current = appTotals.get(app.app) || 0;
         appTotals.set(app.app, current + Number(app.minutes));
       });
 
-      const topApp = Array.from(appTotals.entries()).sort((a: any, b: any) => b[1] - a[1])[0];
+      const topApp = Array.from(appTotals.entries()).sort(
+        (a, b) => b[1] - a[1],
+      )[0];
       if (topApp && topApp[1] > 120) {
         detectedPatterns.push({
           factor: `${topApp[0]} Usage`,
@@ -112,8 +124,9 @@ export const PatternsAnalysis = () => {
     if (healthEntries.length >= 2) {
       const avgWater = healthEntries
         .slice(0, 5)
-        .filter((e: any) => e.water)
-        .reduce((sum: number, e: any) => sum + Number(e.water), 0) / healthEntries.length;
+        .filter((entry) => entry.water)
+        .reduce((sum, entry) => sum + Number(entry.water), 0) /
+        healthEntries.length;
 
       if (avgWater >= 6) {
         detectedPatterns.push({
@@ -132,18 +145,18 @@ export const PatternsAnalysis = () => {
 
     // Analyze location patterns
     if (moodEntries.length >= 3) {
-      const locationMoods = new Map();
-      moodEntries.forEach((m: any) => {
-        if (m.location) {
-          if (!locationMoods.has(m.location)) {
-            locationMoods.set(m.location, []);
+      const locationMoods = new Map<string, number[]>();
+      moodEntries.forEach((entry) => {
+        if (entry.location) {
+          if (!locationMoods.has(entry.location)) {
+            locationMoods.set(entry.location, []);
           }
-          locationMoods.get(m.location).push(m.mood);
+          locationMoods.get(entry.location)?.push(entry.mood);
         }
       });
 
       if (locationMoods.size >= 2) {
-        const avgByLocation = Array.from(locationMoods.entries()).map(([loc, moods]: [string, any]) => ({
+        const avgByLocation = Array.from(locationMoods.entries()).map(([loc, moods]) => ({
           location: loc,
           avgMood: moods.reduce((a: number, b: number) => a + b, 0) / moods.length,
         })).sort((a, b) => b.avgMood - a.avgMood);
@@ -162,18 +175,18 @@ export const PatternsAnalysis = () => {
       }
 
       // Screen time by location
-      const locationScreenTime = new Map();
-      screenTimeEntries.forEach((e: any) => {
-        if (e.location) {
-          if (!locationScreenTime.has(e.location)) {
-            locationScreenTime.set(e.location, []);
+      const locationScreenTime = new Map<string, number[]>();
+      screenTimeEntries.forEach((entry) => {
+        if (entry.location) {
+          if (!locationScreenTime.has(entry.location)) {
+            locationScreenTime.set(entry.location, []);
           }
-          locationScreenTime.get(e.location).push(e.totalMinutes);
+          locationScreenTime.get(entry.location)?.push(entry.totalMinutes);
         }
       });
 
       if (locationScreenTime.size >= 2) {
-        const avgScreenByLocation = Array.from(locationScreenTime.entries()).map(([loc, times]: [string, any]) => ({
+        const avgScreenByLocation = Array.from(locationScreenTime.entries()).map(([loc, times]) => ({
           location: loc,
           avgTime: times.reduce((a: number, b: number) => a + b, 0) / times.length,
         })).sort((a, b) => b.avgTime - a.avgTime);
@@ -191,15 +204,19 @@ export const PatternsAnalysis = () => {
 
     // Temporal pattern warning
     if (moodEntries.length >= 5) {
-      const moodsWithTime = moodEntries.map((m: any) => ({
-        mood: m.mood,
-        hour: new Date(m.timestamp).getHours(),
-        location: m.location,
+      const moodsWithTime = moodEntries.map((entry) => ({
+        mood: entry.mood,
+        hour: new Date(entry.timestamp).getHours(),
+        location: entry.location,
       }));
 
       // Check if mood varies significantly by time of day
-      const morningMoods = moodsWithTime.filter((m: any) => m.hour < 12).map((m: any) => m.mood);
-      const eveningMoods = moodsWithTime.filter((m: any) => m.hour >= 18).map((m: any) => m.mood);
+      const morningMoods = moodsWithTime
+        .filter((entry) => entry.hour < 12)
+        .map((entry) => entry.mood);
+      const eveningMoods = moodsWithTime
+        .filter((entry) => entry.hour >= 18)
+        .map((entry) => entry.mood);
 
       if (morningMoods.length >= 2 && eveningMoods.length >= 2) {
         const avgMorning = morningMoods.reduce((a: number, b: number) => a + b, 0) / morningMoods.length;

@@ -24,7 +24,9 @@ const VibePartnerChat = () => {
       try {
         const parsed = JSON.parse(moods);
         return parsed[parsed.length - 1]?.mood;
-      } catch {}
+      } catch {
+        localStorage.removeItem("vc_moods");
+      }
     }
     return undefined;
   });
@@ -55,7 +57,7 @@ const VibePartnerChat = () => {
             </p>
           </div>
 
-          {/* Professional Help Banner */}
+          {/* Guided reflection banner */}
           <Card 
             className="mb-6 p-4 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20 cursor-pointer hover:shadow-lg transition-all"
             onClick={() => navigate('/cbt-therapist')}
@@ -65,9 +67,9 @@ const VibePartnerChat = () => {
                 <Brain className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground">Need deeper support?</h3>
+                <h3 className="font-semibold text-foreground">Want a structured reflection?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Talk to our professional CBT therapist for evidence-based mental health guidance
+                  Try a CBT-informed prompt flow designed for self-reflection
                 </p>
               </div>
               <Button size="sm" variant="outline">

@@ -2,17 +2,23 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp } from "lucide-react";
+import { readLocalArray, type MoodEntry } from "@/types/wellbeing";
+
+interface MoodChartDatum {
+  name: string;
+  mood: number;
+}
 
 export const MoodChart = () => {
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<MoodChartDatum[]>([]);
 
   useEffect(() => {
-    const entries = JSON.parse(localStorage.getItem("moodEntries") || "[]");
+    const entries = readLocalArray<MoodEntry>("moodEntries");
     
     // Get last 7 entries and reverse for chronological order
     const recentEntries = entries.slice(0, 7).reverse();
     
-    const data = recentEntries.map((entry: any, index: number) => ({
+    const data = recentEntries.map((entry) => ({
       name: new Date(entry.timestamp).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",

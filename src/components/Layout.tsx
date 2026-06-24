@@ -20,13 +20,13 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-hero">
+      <div className="flex min-h-screen w-full min-w-0 overflow-x-hidden bg-gradient-hero">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <header className="h-14 flex items-center border-b border-border/50 bg-card/40 backdrop-blur-lg px-6 shadow-soft">
             <SidebarTrigger className="hover:bg-muted/50 rounded-lg transition-all" />
           </header>
-          <main className="flex-1 overflow-auto page-transition">
+          <main className="min-w-0 flex-1 overflow-auto page-transition">
             {children}
           </main>
         </div>

@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Vibe Partner", url: "/vibe-partner", icon: Heart },
-  { title: "CBT Therapist", url: "/cbt-therapist", icon: Brain },
+  { title: "Guided Reflection", url: "/cbt-therapist", icon: Brain },
   { title: "Common Room", url: "/common-room", icon: Users },
   { title: "Mood Tracker", url: "/mood-tracker", icon: MessageSquare },
   { title: "Analytics", url: "/mood-dashboard", icon: TrendingUp },

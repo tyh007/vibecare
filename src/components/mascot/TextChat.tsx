@@ -6,6 +6,7 @@ import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "@/types/wellbeing";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -70,28 +71,28 @@ export const TextChat = ({ partnerName, partnerType, mood }: TextChatProps) => {
         };
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Show professional help suggestion if needed
+        // Surface additional support when the prototype detects concerning language.
         if (data.suggestProfessionalHelp) {
           toast({
-            title: "Professional Support Available",
-            description: "Consider talking to our CBT therapist for deeper support.",
+            title: "Additional support may help",
+            description: "Consider contacting someone you trust or a qualified support service.",
             action: (
               <Button 
                 size="sm" 
                 onClick={() => navigate('/cbt-therapist')}
               >
-                Talk to CBT Therapist
+                Open Reflection Tool
               </Button>
             ),
             duration: 10000,
           });
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting AI response:', error);
       toast({
         title: "Chat Error",
-        description: error.message || "Could not get response. Please try again.",
+        description: getErrorMessage(error, "Could not get a response. Please try again."),
         variant: "destructive"
       });
     } finally {

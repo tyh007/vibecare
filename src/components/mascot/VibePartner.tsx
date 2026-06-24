@@ -138,7 +138,10 @@ export const VibePartner = ({ points, level, name, mood, type = 'cat', onCustomi
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsDialogOpen(true)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsDialogOpen(true);
+            }}
             className="h-8 w-8"
           >
             <Settings className="w-4 h-4" />

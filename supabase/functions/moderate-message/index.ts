@@ -22,7 +22,28 @@ serve(async (req) => {
     }
 
     const { message, userId } = await req.json();
-    console.log('Moderating message:', { userId, messageLength: message.length });
+    if (typeof message !== 'string' || !message.trim() || message.length > 4000) {
+      return new Response(
+        JSON.stringify({ error: 'Message must contain 1–4000 characters.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await authClient.auth.getUser();
+
+    if (userError || !user || user.id !== userId) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Moderating message:', { userId: user.id, messageLength: message.length });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -30,7 +51,7 @@ serve(async (req) => {
     }
 
     // Use AI to analyze message for concerning content
-    const systemPrompt = `You are a mental health crisis detection AI. Analyze the following message for signs of:
+    const systemPrompt = `You are a conservative content-safety classifier for a student community prototype. Classify the following message for signs of:
 - Self-harm intentions or ideation
 - Suicidal thoughts or plans
 - Severe depression or hopelessness
@@ -44,7 +65,7 @@ Respond ONLY with a JSON object (no markdown formatting) in this format:
   "requiresIntervention": true/false
 }
 
-Be sensitive but thorough. Mark as "critical" only for immediate danger.`;
+This classification can be wrong and must never be described as diagnosis or crisis monitoring. Be sensitive but thorough. Mark as "critical" only for explicit immediate danger.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -56,7 +77,7 @@ Be sensitive but thorough. Mark as "critical" only for immediate danger.`;
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
+          { role: 'user', content: message.trim() }
         ],
       }),
     });
@@ -65,12 +86,14 @@ Be sensitive but thorough. Mark as "critical" only for immediate danger.`;
       const errorText = await response.text();
       console.error('AI gateway error:', response.status, errorText);
       
-      // Default to not flagging if AI service fails
+      // Report degraded moderation explicitly; the client must not imply the
+      // message was reviewed successfully.
       return new Response(JSON.stringify({ 
         flagged: false,
         severity: null,
-        reason: null,
-        requiresIntervention: false
+        reason: 'Moderation service unavailable',
+        requiresIntervention: false,
+        moderationUnavailable: true
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -103,7 +126,7 @@ Be sensitive but thorough. Mark as "critical" only for immediate danger.`;
     // If flagged, update the message in database
     if (moderationResult.flagged) {
       const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
+        supabaseUrl,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
