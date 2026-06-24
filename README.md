@@ -26,9 +26,6 @@ The project began as a rapid collaborative build. This repository is a carefully
 
 VibeCare was created with a teammate.
 
-> **Credit placeholder:** add collaborator name, portfolio/GitHub link, and precise contribution summary before presenting this case study as final.
-
-The original collaboration and commit record remain available in [`tyh007/vibe-care-buddy`](https://github.com/tyh007/vibe-care-buddy).
 
 ## Product direction
 
