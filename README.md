@@ -1,226 +1,163 @@
-# VibeCare 🌟
+# VibeCare
 
-**Your Personal Wellness Companion for College Life**
+**A student-wellbeing product prototype that brings planning, reflection, peer connection, and AI-guided check-ins into one gentle daily experience.**
 
-VibeCare is a comprehensive mental wellness platform designed specifically for college students, combining AI-powered support, mood tracking, and community connection to help you navigate the challenges of student life.
+![VibeCare landing page](docs/images/vibecare-hero.png)
 
-## 🎯 Features
+[View the source](https://github.com/tyh007/vibecare) · [Original collaborative repository](https://github.com/tyh007/vibe-care-buddy)
 
-### 🤖 AI Companions
-- **Vibe Partner**: Your personalized AI companion (choose from cat, dog, or panda) that provides empathetic support and CBT-based guidance
-- **Professional CBT Therapist**: Access evidence-based cognitive behavioral therapy support for deeper mental health needs
-- Powered by Google Gemini 2.5 Flash for intelligent, context-aware conversations
+> VibeCare is a portfolio prototype, not a medical product, therapist, crisis service, or substitute for professional care.
 
-### 📊 Wellness Tracking
-- **Mood Tracker**: Log your daily moods and track emotional patterns over time
-- **Check-in System**: Build healthy habits with daily check-ins and streak rewards
-- **Visual Analytics**: See your wellness journey through intuitive charts and insights
+## Case study
 
-### 👥 Community Support
-- **Common Room**: AI-monitored safe space to share thoughts and connect with peers
-- Real-time messaging with automatic content moderation for user safety
-- Crisis detection system that recommends professional help when needed
+University life asks students to manage academic pressure, personal routines, social connection, and emotional wellbeing across tools that rarely speak to one another. VibeCare explores a more coherent experience: a calendar-first workspace where lightweight mood reflection and support appear in the context of a student's actual day.
 
-### 🎨 Personalization & Rewards
-- **Avatar Customization**: Create your unique pixel avatar with customizable features (hairstyles, colors, accessories)
-- **Shop System**: Earn coins through engagement and purchase avatar items
-- **Streak Rewards**: Stay motivated with daily check-in streaks and achievements
+The project began as a rapid collaborative build. This repository is a carefully reconstructed portfolio edition: the strongest product direction is preserved, duplicate experiments and exposed configuration are removed, and the implementation is documented with clearer safety and privacy boundaries.
 
-### 🔒 Privacy & Security
-- End-to-end user authentication with secure data handling
-- Row-level security policies protecting all user data
-- AI content moderation for community safety
+### My role
 
-## 🛠️ Technology Stack
+**Product Designer + Frontend Developer**
 
-**Frontend**
-- React 18 with TypeScript
-- Vite for lightning-fast development
-- Tailwind CSS for modern, responsive design
-- shadcn/ui components for beautiful UI
-- Recharts for data visualization
+- Shaped the calendar-first product concept and key user flows.
+- Designed and implemented the responsive React interface.
+- Integrated mood reflection, planning, avatar rewards, and AI-assisted experiences.
+- Reworked the original prototype into a safer, reproducible portfolio repository.
 
-**Backend (Lovable Cloud)**
-- Supabase for database and authentication
-- Edge Functions for serverless AI processing
-- Real-time subscriptions for live updates
-- Secure secrets management
+### Collaboration
 
-**AI Integration**
-- Lovable AI Gateway
-- Google Gemini 2.5 Flash models
-- Context-aware conversation handling
-- Crisis detection and intervention
+VibeCare was created with a teammate.
 
-## 🚀 Getting Started
+> **Credit placeholder:** add collaborator name, portfolio/GitHub link, and precise contribution summary before presenting this case study as final.
+
+The original collaboration and commit record remain available in [`tyh007/vibe-care-buddy`](https://github.com/tyh007/vibe-care-buddy).
+
+## Product direction
+
+The design is built around three principles:
+
+1. **Meet students inside their routine.** Wellbeing actions are connected to calendar context rather than isolated in another tracker.
+2. **Keep reflection lightweight.** Check-ins use small prompts, visible trends, and manageable next steps.
+3. **Make support boundaries obvious.** AI can guide reflection and assist moderation, but must not present itself as diagnosis, treatment, professional care, or reliable crisis monitoring.
+
+## Experience highlights
+
+| Area | Product intent |
+| --- | --- |
+| Dashboard and calendar | Combine schedule awareness, notes, suggested activities, and daily mood context. |
+| Mood reflection | Capture a check-in and explore patterns across time, routine, and location. |
+| Vibe Partner | Offer a customizable conversational companion for brief, supportive prompts. |
+| Guided reflection | Walk through CBT-informed questions without claiming clinical authority. |
+| Community Room | Explore peer connection with authenticated posting and fallible AI-assisted moderation. |
+| Avatar rewards | Use lightweight progression and customization to encourage repeat engagement. |
+
+![VibeCare dashboard](docs/images/vibecare-dashboard.png)
+
+<img src="docs/images/vibecare-dashboard-mobile.png" alt="VibeCare responsive dashboard" width="360" />
+
+## Architecture
+
+```mermaid
+flowchart LR
+  A["React + TypeScript client"] --> B["Supabase Auth"]
+  A --> C["Postgres with row-level policies"]
+  A --> D["Supabase Realtime"]
+  A --> E["Edge Functions"]
+  E --> F["Lovable AI Gateway"]
+  F --> G["Gemini model"]
+  A -. optional .-> H["Mapbox"]
+```
+
+The frontend is a Vite application using React, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, Recharts, and Mapbox GL. Supabase provides authentication, persistence, realtime updates, database policies, migrations, and Edge Functions.
+
+Routes are lazy-loaded and larger chart, map, and Supabase dependencies are split into separate production chunks.
+
+## Safety & privacy
+
+- Edge Functions require a valid Supabase JWT.
+- Community moderation verifies that the authenticated user matches the submitted user ID before any service-role update.
+- AI inputs are length-limited, and conversation history is constrained before gateway requests.
+- Missing moderation is reported as degraded service rather than silently described as successful review.
+- Product copy avoids unsupported claims about confidentiality, encryption, professional credentials, diagnosis, treatment, or guaranteed crisis detection.
+- The included database policies should be reviewed and tested before real personal data is used.
+
+For crisis support in the United States, call or text [988](https://988lifeline.org/). For immediate danger, contact local emergency services. Outside the U.S., use an appropriate local crisis service.
+
+## Local setup
 
 ### Prerequisites
-- Node.js 18+ and npm installed
-- A Lovable account (for Cloud features)
 
-### Installation
+- Node.js 20 or newer
+- [pnpm](https://pnpm.io/)
+- A Supabase project
+- Access to a compatible AI gateway for the included Edge Functions
 
-1. Clone the repository:
+### 1. Install
+
 ```bash
-git clone <YOUR_GIT_URL>
+git clone https://github.com/tyh007/vibecare.git
 cd vibecare
+pnpm install
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-```bash
-# .env file is automatically configured when using Lovable Cloud
-# For local development, ensure you have:
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key
-```
-
-4. Start the development server:
-```bash
-npm run dev
-```
-
-5. Open [http://localhost:8080](http://localhost:8080) in your browser
-
-## 📱 Application Structure
-
-```
-src/
-├── components/          # Reusable UI components
-│   ├── mascot/         # Vibe Partner chat components
-│   ├── ui/             # shadcn/ui components
-│   └── ...
-├── pages/              # Application pages
-│   ├── Auth.tsx        # Authentication
-│   ├── Dashboard.tsx   # Main dashboard
-│   ├── MoodTracker.tsx # Mood logging
-│   ├── VibePartnerChat.tsx
-│   ├── CBTTherapist.tsx
-│   ├── CommonRoom.tsx  # Community chat
-│   └── Shop.tsx        # Avatar shop
-├── hooks/              # Custom React hooks
-├── integrations/       # Supabase integration
-└── utils/              # Utility functions
-
-supabase/
-├── functions/          # Edge Functions
-│   ├── vibe-partner-chat/
-│   ├── cbt-therapist-chat/
-│   └── moderate-message/
-└── migrations/         # Database migrations
-```
-
-## 🔐 Security Features
-
-- **Authenticated Edge Functions**: All AI endpoints require valid JWT tokens
-- **Row-Level Security**: Users can only access their own data
-- **Input Validation**: Server-side validation for all user inputs
-- **Content Moderation**: AI-powered detection of concerning messages
-- **Secure Sessions**: Automatic token refresh and session management
-
-## 🎨 Key Features Explained
-
-### Mood Tracking
-Track your emotional state daily and see patterns over time. The system uses a 1-5 scale with visual representations and generates insights about your wellness journey.
-
-### AI Chat Support
-- **Vibe Partner**: Casual, friendly support for everyday wellness
-- **CBT Therapist**: Professional-level cognitive behavioral therapy techniques
-- Both use advanced AI to provide personalized, context-aware responses
-
-### Community Room
-A moderated space where students can share experiences. AI monitors messages for concerning content and automatically suggests professional help when needed.
-
-### Rewards System
-Earn coins through:
-- Daily check-ins
-- Maintaining streaks
-- Regular engagement
-
-Use coins to customize your avatar with hats, accessories, and more!
-
-## 🚢 Deployment
-
-### Deploy with Lovable (Recommended)
-1. Open your project in [Lovable](https://lovable.dev)
-2. Click **Publish** in the top right
-3. Your app will be deployed to `yourapp.lovable.app`
-
-### Connect Custom Domain
-1. Navigate to Project > Settings > Domains
-2. Click "Connect Domain"
-3. Follow the DNS configuration steps
-4. Your app will be available at your custom domain
-
-### Self-Hosting
-The codebase is standard React/Vite and can be deployed to any hosting platform:
-- Vercel
-- Netlify
-- AWS Amplify
-- Your own server
-
-Note: You'll need to configure Supabase environment variables in your hosting platform.
-
-## 🧪 Development
-
-### Available Scripts
+### 2. Configure the client
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
+cp .env.example .env
 ```
 
-### Database Migrations
+Add the public client values from Supabase:
 
-Database changes are managed through Supabase migrations in `supabase/migrations/`. The Lovable Cloud integration handles deployment automatically.
+```dotenv
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+VITE_MAPBOX_TOKEN=optional-mapbox-token
+```
 
-### Adding Features
+Without the two Supabase values, VibeCare shows an actionable configuration screen instead of crashing.
 
-VibeCare is built with modularity in mind. To add new features:
+### 3. Configure Supabase
 
-1. Create new components in `src/components/`
-2. Add pages in `src/pages/`
-3. Update routing in `src/App.tsx`
-4. Add database tables via migrations if needed
-5. Create edge functions for backend logic
+1. Link the project with the Supabase CLI.
+2. Apply the SQL files in `supabase/migrations/`.
+3. Configure `LOVABLE_API_KEY` for the current Edge Function gateway, or adapt the functions to another provider.
+4. Deploy `vibe-partner-chat`, `cbt-therapist-chat`, and `moderate-message`.
 
-## 🤝 Contributing
+The legacy function and route name `cbt-therapist-chat` is retained for migration compatibility; the user-facing experience is called **Guided Reflection**.
 
-This is a Lovable-generated project. Changes can be made by:
-- Using the Lovable editor
-- Pushing commits to this repository
-- Editing directly on GitHub
+### 4. Run
 
-All changes sync bidirectionally between Lovable and GitHub.
+```bash
+pnpm dev
+```
 
-## 📄 License
+Open `http://127.0.0.1:8080`.
 
-This project is open source and available under the MIT License.
+## Quality checks
 
-## 🆘 Support & Resources
+```bash
+pnpm typecheck
+pnpm lint
+pnpm build
 
-- **Lovable Documentation**: [docs.lovable.dev](https://docs.lovable.dev)
-- **Supabase Docs**: [supabase.com/docs](https://supabase.com/docs)
-- **Community Discord**: Join the Lovable community for help and discussions
+# or run the complete verification sequence
+pnpm check
+```
 
-## 🙏 Acknowledgments
+## Repository reconstruction
 
-- Built with [Lovable](https://lovable.dev)
-- Powered by [Supabase](https://supabase.com)
-- AI by [Google Gemini](https://deepmind.google/technologies/gemini/)
-- UI components by [shadcn/ui](https://ui.shadcn.com)
+This repository was rebuilt from the root application at source commit [`d2fc278`](https://github.com/tyh007/vibe-care-buddy/commit/d2fc278f329c99122b81865341849fb180a2beef).
 
----
+The original repository is intentionally untouched. Its Git history was not imported because it contains committed environment files, a second divergent application, and unrelated notebook material. This portfolio edition begins with a new sanitized history while preserving the provenance link above.
 
-**Note**: This is a mental wellness support tool, not a replacement for professional mental health care. If you're experiencing a mental health crisis, please contact emergency services or a crisis hotline immediately.
+## Limitations
 
-**Crisis Resources**:
-- National Suicide Prevention Lifeline: 988
-- Crisis Text Line: Text HOME to 741741
-- International Association for Suicide Prevention: [iasp.info](https://www.iasp.info/resources/Crisis_Centres/)
+- Backend configuration is required; there is no mock-data fallback for authentication or server features.
+- The AI gateway configuration reflects the original prototype and may require adaptation.
+- Automated moderation is probabilistic and cannot guarantee safety.
+- The onboarding support-contact screen demonstrates a concept and does not contact anyone automatically.
+- The product has not undergone clinical validation, formal security review, or production privacy assessment.
+- Automated end-to-end and database policy tests remain future work.
+
+## Status and usage
+
+This repository is published for portfolio review and technical discussion. No open-source license has been added because contributor authorization has not yet been confirmed. All rights remain with the respective contributors unless a license is added later.
