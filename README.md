@@ -148,6 +148,7 @@ The original repository is intentionally untouched. Its Git history was not impo
 
 ## Limitations
 
+- This is a prototype in a student activity and not a product.
 - Backend configuration is required; there is no mock-data fallback for authentication or server features.
 - The AI gateway configuration reflects the original prototype and may require adaptation.
 - Automated moderation is probabilistic and cannot guarantee safety.
