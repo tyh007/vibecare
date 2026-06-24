@@ -76,7 +76,8 @@ Routes are lazy-loaded and larger chart, map, and Supabase dependencies are spli
 - Product copy avoids unsupported claims about confidentiality, encryption, professional credentials, diagnosis, treatment, or guaranteed crisis detection.
 - The included database policies should be reviewed and tested before real personal data is used.
 
-For crisis support in the United States, call or text [988](https://988lifeline.org/). For immediate danger, contact local emergency services. Outside the U.S., use an appropriate local crisis service.
+**For crisis support in the United Kingdom, contact [NHS 111](https://www.nhs.uk/nhs-services/mental-health-services/where-to-get-urgent-help-for-mental-health/) and select the mental health option where available, or call [Samaritans](https://www.samaritans.org/) free on 116 123 for 24/7 emotional support. For immediate danger, call 999 or go to A&E. Outside the U.K., use an appropriate local crisis service.**
+
 
 ## Local setup
 
