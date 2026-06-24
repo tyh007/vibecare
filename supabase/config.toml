@@ -1,0 +1,10 @@
+project_id = "vucitsciqcnanaxszdxj"
+
+[functions.vibe-partner-chat]
+verify_jwt = true
+
+[functions.cbt-therapist-chat]
+verify_jwt = true
+
+[functions.moderate-message]
+verify_jwt = true
