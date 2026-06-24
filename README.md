@@ -17,7 +17,7 @@ The project began as a rapid collaborative build. This repository is a carefully
 
 **Product Designer + Frontend Developer**
 
-- Shaped the calendar-first product concept and key user flows.
+- Lead the brainstorming and shaped the product concept and key user flows.
 - Designed and implemented the responsive React interface.
 - Integrated mood reflection, planning, avatar rewards, and AI-assisted experiences.
 - Reworked the original prototype into a safer, reproducible portfolio repository.
