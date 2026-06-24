@@ -4,9 +4,8 @@
 
 ![VibeCare landing page](docs/images/vibecare-hero.png)
 
-[View the source](https://github.com/tyh007/vibecare) · [Original collaborative repository](https://github.com/tyh007/vibe-care-buddy)
 
-> VibeCare is a portfolio prototype, not a medical product, therapist, crisis service, or substitute for professional care.
+*VibeCare is a portfolio prototype, not a medical product, therapist, crisis service, or substitute for professional care.
 
 ## Case study
 
