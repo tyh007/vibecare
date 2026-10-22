@@ -5,7 +5,7 @@
 ![VibeCare landing page](docs/images/vibecare-hero.png)
 
 
-*VibeCare is a portfolio prototype, not a medical product, therapist, crisis service, or substitute for professional care.
+*VibeCare is a portfolio prototype, not a medical product, therapist, crisis service, or substitute for professional care.*
 
 ## Case study
 
@@ -83,7 +83,7 @@ Routes are lazy-loaded and larger chart, map, and Supabase dependencies are spli
 
 ### Prerequisites
 
-- Node.js 20 or newer
+- Node.js 22.13 or newer (required by the pinned pnpm 11)
 - [pnpm](https://pnpm.io/)
 - A Supabase project
 - Access to a compatible AI gateway for the included Edge Functions
@@ -140,6 +140,14 @@ pnpm build
 pnpm check
 ```
 
+## Dependency audit status
+
+The portfolio cleanup updates Vite, React Router and compatible dependency releases, and pins a patched selector parser in `pnpm-workspace.yaml`. The frozen lockfile and explicit native-build allowlist are part of the reproducible setup.
+
+One high-severity advisory remains in `braces@3.0.3`, reached through the Tailwind build pipeline: [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). GitHub lists no published patched version, and the npm registry still resolves the latest release to 3.0.3. This repository does not suppress the advisory or claim a clean dependency audit. Use trusted build inputs; resolving the remaining finding requires an upstream fix or a separately verified build-pipeline migration.
+
+Run `pnpm audit` to inspect the current dependency status. Audit results change over time; passing type/lint/build checks is not a production security certification.
+
 ## Repository reconstruction
 
 This repository was rebuilt from the root application at source commit [`d2fc278`](https://github.com/tyh007/vibe-care-buddy/commit/d2fc278f329c99122b81865341849fb180a2beef).
@@ -149,7 +157,7 @@ The original repository is intentionally untouched. Its Git history was not impo
 ## Limitations
 
 - This is a prototype in a student activity and not a product.
-- Backend configuration is required; there is no mock-data fallback for authentication or server features.
+- Backend configuration is required for authentication and server features. Mood-dashboard demo utilities can create sample records; those samples are not evidence of real users or evaluation.
 - The AI gateway configuration reflects the original prototype and may require adaptation.
 - Automated moderation is probabilistic and cannot guarantee safety.
 - The onboarding support-contact screen demonstrates a concept and does not contact anyone automatically.
