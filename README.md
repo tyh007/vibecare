@@ -5,7 +5,7 @@
 ![VibeCare landing page](docs/images/vibecare-hero.png)
 
 
-*VibeCare is a portfolio prototype, not a medical product, therapist, crisis service, or substitute for professional care.
+*VibeCare is a portfolio prototype, not a medical product, therapist, crisis service, or substitute for professional care.*
 
 ## Case study
 
@@ -83,7 +83,7 @@ Routes are lazy-loaded and larger chart, map, and Supabase dependencies are spli
 
 ### Prerequisites
 
-- Node.js 20 or newer
+- Node.js 22.13 or newer (required by the pinned pnpm 11)
 - [pnpm](https://pnpm.io/)
 - A Supabase project
 - Access to a compatible AI gateway for the included Edge Functions
@@ -149,7 +149,7 @@ The original repository is intentionally untouched. Its Git history was not impo
 ## Limitations
 
 - This is a prototype in a student activity and not a product.
-- Backend configuration is required; there is no mock-data fallback for authentication or server features.
+- Backend configuration is required for authentication and server features. Mood-dashboard demo utilities can create sample records; those samples are not evidence of real users or evaluation.
 - The AI gateway configuration reflects the original prototype and may require adaptation.
 - Automated moderation is probabilistic and cannot guarantee safety.
 - The onboarding support-contact screen demonstrates a concept and does not contact anyone automatically.

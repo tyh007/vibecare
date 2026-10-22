@@ -278,7 +278,7 @@ const Shop = () => {
     if (!user) return;
 
     try {
-      let updateField: string;
+      let updateField: "hairstyle" | "hair_color" | "eye_color" | "top" | "bottom" | "accessory";
       let newValue: string;
       
       // Map category to database field
@@ -302,7 +302,7 @@ const Shop = () => {
           updateField = "accessory";
           break;
         default:
-          updateField = item.category;
+          throw new Error(`Unsupported shop category: ${item.category}`);
       }
       
       // Toggle equip/unequip
@@ -321,9 +321,11 @@ const Shop = () => {
         newValue = item.icon;
       }
       
+      const profileUpdate: { hairstyle?: string; hair_color?: string; eye_color?: string; top?: string; bottom?: string; accessory?: string } = {};
+      profileUpdate[updateField] = newValue;
       const { error } = await supabase
         .from("profiles")
-        .update({ [updateField]: newValue })
+        .update(profileUpdate)
         .eq("user_id", user.id);
 
       if (error) throw error;
