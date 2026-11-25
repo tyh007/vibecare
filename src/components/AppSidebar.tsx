@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/auth/useAuth";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -28,14 +29,16 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signOut } = useAuth();
   const collapsed = state === "collapsed";
 
-  const handleLogout = () => {
-    navigate('/auth');
+  const handleLogout = async () => {
+    await signOut();
     toast({
       title: "Logged out",
       description: "See you next time!",
     });
+    navigate("/auth", { replace: true });
   };
 
   return (

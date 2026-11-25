@@ -65,8 +65,8 @@ const Onboarding = () => {
                         Store my calendar and mood data in my account
                       </Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Stored in Supabase and protected by the database access
-                        policies included with this prototype.
+                        VibeCare stores these records on the server hosting this
+                        app and controls access by account.
                       </p>
                     </div>
                   </div>
@@ -236,9 +236,8 @@ const Onboarding = () => {
 
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <p className="text-sm text-muted-foreground">
-                    💡 This baseline helps VibeCare track your progress and personalize suggestions. 
-                    Access is governed by the Supabase policies supplied with
-                    this prototype; review them before using real personal data.
+                    This baseline helps VibeCare track your progress and personalize
+                    suggestions.
                   </p>
                 </div>
               </div>

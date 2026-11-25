@@ -3,9 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ConfigurationRequired from "@/components/ConfigurationRequired";
-import { environment } from "@/config/environment";
+import { BrowserRouter, Outlet, Routes, Route } from "react-router-dom";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
+import { BackendHealthGate } from "@/components/BackendHealthGate";
+import { AuthProvider } from "@/auth/AuthProvider";
+import { AuthGuard } from "@/auth/AuthGuard";
 
 const Layout = lazy(() =>
   import("@/components/Layout").then((module) => ({ default: module.Layout })),
@@ -22,7 +24,14 @@ const MoodTracker = lazy(() => import("@/pages/MoodTracker"));
 const MoodDashboard = lazy(() => import("@/pages/MoodDashboard"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const LoadingScreen = () => (
   <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">
@@ -31,36 +40,51 @@ const LoadingScreen = () => (
 );
 
 const App = () => {
-  if (!environment.isSupabaseConfigured) {
-    return <ConfigurationRequired />;
-  }
-
   return (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Suspense fallback={<LoadingScreen />}>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/vibe-partner" element={<VibePartnerChat />} />
-              <Route path="/cbt-therapist" element={<CBTTherapist />} />
-              <Route path="/common-room" element={<CommonRoom />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/mood-tracker" element={<MoodTracker />} />
-              <Route path="/mood-dashboard" element={<MoodDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Suspense fallback={<LoadingScreen />}>
+                <BackendHealthGate>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="*" element={<NotFound />} />
+
+                    {/* Protected routes — AuthGuard renders Layout and an Outlet
+                        so nested routes (Onboarding, Dashboard, ...) render
+                        through Layout's sidebar+main split. */}
+                    <Route
+                      element={
+                        <AuthGuard>
+                          <Layout />
+                        </AuthGuard>
+                      }
+                    >
+                      <Route index element={<Onboarding />} />
+                      <Route path="/onboarding" element={<Onboarding />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/vibe-partner" element={<VibePartnerChat />} />
+                      <Route path="/cbt-therapist" element={<CBTTherapist />} />
+                      <Route path="/common-room" element={<CommonRoom />} />
+                      <Route path="/shop" element={<Shop />} />
+                      <Route path="/mood-tracker" element={<MoodTracker />} />
+                      <Route path="/mood-dashboard" element={<MoodDashboard />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Route>
+                  </Routes>
+                </BackendHealthGate>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </AppErrorBoundary>
   );
 };
 

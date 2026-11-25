@@ -4,78 +4,84 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { getErrorMessage } from "@/types/wellbeing";
+import { moodService } from "@/services/moods";
+import { ApiError } from "@/services/http";
 
 const moods = [
-  { 
-    emoji: "😊", 
-    label: "Great", 
-    value: 5, 
+  {
+    emoji: "😊",
+    label: "Great",
+    value: 5,
     color: "bg-green-500",
     prompts: [
       "I accomplished something today",
       "I spent time with loved ones",
       "I took care of myself",
       "Something positive happened",
-      "I feel energized and motivated"
-    ]
+      "I feel energized and motivated",
+    ],
   },
-  { 
-    emoji: "🙂", 
-    label: "Good", 
-    value: 4, 
+  {
+    emoji: "🙂",
+    label: "Good",
+    value: 4,
     color: "bg-green-400",
     prompts: [
       "Things are going well",
       "I had a productive day",
       "I'm feeling content",
       "I made progress on my goals",
-      "I had pleasant interactions"
-    ]
+      "I had pleasant interactions",
+    ],
   },
-  { 
-    emoji: "😐", 
-    label: "Okay", 
-    value: 3, 
+  {
+    emoji: "😐",
+    label: "Okay",
+    value: 3,
     color: "bg-yellow-400",
     prompts: [
       "It's just another day",
       "Nothing special happened",
       "Feeling neutral about things",
       "Some ups and downs",
-      "Just going through the motions"
-    ]
+      "Just going through the motions",
+    ],
   },
-  { 
-    emoji: "😔", 
-    label: "Down", 
-    value: 2, 
+  {
+    emoji: "😔",
+    label: "Down",
+    value: 2,
     color: "bg-orange-400",
     prompts: [
       "Feeling a bit overwhelmed",
       "Something didn't go as planned",
       "I'm tired or stressed",
       "Missing someone or something",
-      "Feeling uncertain about things"
-    ]
+      "Feeling uncertain about things",
+    ],
   },
-  { 
-    emoji: "😢", 
-    label: "Sad", 
-    value: 1, 
+  {
+    emoji: "😢",
+    label: "Sad",
+    value: 1,
     color: "bg-red-400",
     prompts: [
       "I'm going through a difficult time",
       "Feeling lonely or isolated",
       "Something painful happened",
       "I'm worried about something",
-      "Struggling with negative thoughts"
-    ]
+      "Struggling with negative thoughts",
+    ],
   },
 ];
 
-export const MoodSelector = () => {
+interface MoodSelectorProps {
+  /** Optional callback fired after a successful save. Parents can use this to
+   *  invalidate React Query caches (e.g. MoodDashboard wiring). */
+  onSaved?: () => void;
+}
+
+export const MoodSelector = ({ onSaved }: MoodSelectorProps = {}) => {
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -84,56 +90,35 @@ export const MoodSelector = () => {
   const [screenTime, setScreenTime] = useState<number>(120);
   const [hydration, setHydration] = useState<number>(2000);
   const [location, setLocation] = useState<string>("");
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  const selectedMoodData = moods.find(m => m.value === selectedMood);
+  const selectedMoodData = moods.find((m) => m.value === selectedMood);
 
   const toggleReason = (reason: string) => {
-    setSelectedReasons(prev => 
-      prev.includes(reason) 
-        ? prev.filter(r => r !== reason)
-        : [...prev, reason]
+    setSelectedReasons((prev) =>
+      prev.includes(reason) ? prev.filter((r) => r !== reason) : [...prev, reason],
     );
   };
 
   const handleSave = async () => {
     if (selectedMood === null) {
-      toast({
-        title: "Please select a mood",
-        variant: "destructive",
-      });
+      toast({ title: "Please select a mood", variant: "destructive" });
       return;
     }
-
+    setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Please sign in",
-          description: "You need to be signed in to track your mood.",
-          variant: "destructive",
-        });
-        return;
-      }
+      await moodService.create({
+        mood: selectedMood,
+        sleep_hours: sleepHours,
+        physical_activity_minutes: physicalActivity,
+        screen_time_minutes: screenTime,
+        hydration_ml: hydration,
+        location: location || null,
+        notes: note || null,
+      });
 
-      // Save to database
-      const { error: insertError } = await supabase
-        .from("mood_entries")
-        .insert({
-          user_id: user.id,
-          mood: selectedMood,
-          sleep_hours: sleepHours,
-          physical_activity_minutes: physicalActivity,
-          screen_time_minutes: screenTime,
-          hydration_ml: hydration,
-          location: location || null,
-          notes: note || null,
-        });
-
-      if (insertError) throw insertError;
-
-      // Also save to localStorage for backwards compatibility
+      // Keep a localStorage mirror for components that haven't migrated yet.
       const moodEntry = {
         mood: selectedMood,
         reasons: selectedReasons,
@@ -141,61 +126,23 @@ export const MoodSelector = () => {
         timestamp: new Date().toISOString(),
         location,
       };
-      const existingEntries = JSON.parse(localStorage.getItem("moodEntries") || "[]");
-      localStorage.setItem("moodEntries", JSON.stringify([moodEntry, ...existingEntries]));
-
-      // Award coins and update streak
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("coins, last_check_in, current_streak, longest_streak, total_check_ins")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (profile) {
-        const today = new Date().toDateString();
-        const lastCheckIn = profile.last_check_in ? new Date(profile.last_check_in).toDateString() : null;
-        
-        let coinsEarned = 10; // Base reward
-        let newStreak = profile.current_streak || 0;
-        
-        // Check if this is a new day
-        if (lastCheckIn !== today) {
-          // Update streak
-          if (lastCheckIn === new Date(Date.now() - 86400000).toDateString()) {
-            newStreak += 1;
-          } else if (lastCheckIn !== null) {
-            newStreak = 1;
-          } else {
-            newStreak = 1;
-          }
-          
-          // Bonus coins for streak
-          coinsEarned += Math.floor(newStreak / 7) * 5;
-
-          await supabase
-            .from("profiles")
-            .update({
-              coins: (profile.coins || 0) + coinsEarned,
-              last_check_in: new Date().toISOString().split('T')[0],
-              current_streak: newStreak,
-              longest_streak: Math.max(newStreak, profile.longest_streak || 0),
-              total_check_ins: (profile.total_check_ins || 0) + 1
-            })
-            .eq("user_id", user.id);
-
-          toast({
-            title: "Wellness check-in saved! 🎉",
-            description: `You earned ${coinsEarned} coins! Streak: ${newStreak} days`,
-          });
-        } else {
-          toast({
-            title: "Check-in updated!",
-            description: "You've already checked in today.",
-          });
-        }
+      try {
+        const existing = JSON.parse(localStorage.getItem("moodEntries") || "[]");
+        localStorage.setItem(
+          "moodEntries",
+          JSON.stringify([moodEntry, ...existing]),
+        );
+      } catch {
+        /* localStorage unavailable — server has the truth */
       }
 
-      // Reset form
+      toast({
+        title: "Wellness check-in saved! 🎉",
+        description: "Coins and streak have been updated on your profile.",
+      });
+
+      onSaved?.();
+
       setSelectedMood(null);
       setSelectedReasons([]);
       setNote("");
@@ -205,18 +152,19 @@ export const MoodSelector = () => {
       setHydration(2000);
       setLocation("");
     } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: getErrorMessage(error),
-        variant: "destructive",
-      });
+      const message = error instanceof ApiError ? error.message : "Please try again.";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <Card className="p-8 animate-fade-in glass border-2 border-border/50 shadow-medium hover-lift">
-      <h3 className="text-2xl font-display font-bold mb-6 gradient-text">How are you feeling?</h3>
-      
+      <h3 className="text-2xl font-display font-bold mb-6 gradient-text">
+        How are you feeling?
+      </h3>
+
       <div className="grid grid-cols-5 gap-3 mb-8">
         {moods.map((mood) => (
           <button
@@ -239,7 +187,9 @@ export const MoodSelector = () => {
 
       {selectedMoodData && (
         <div className="mb-6 animate-fade-in p-5 rounded-xl glass border border-border/50">
-          <h4 className="font-display font-bold text-lg mb-4">Why are you feeling {selectedMoodData.label.toLowerCase()}?</h4>
+          <h4 className="font-display font-bold text-lg mb-4">
+            Why are you feeling {selectedMoodData.label.toLowerCase()}?
+          </h4>
           <div className="flex flex-wrap gap-2">
             {selectedMoodData.prompts.map((prompt) => (
               <Badge
@@ -255,11 +205,9 @@ export const MoodSelector = () => {
         </div>
       )}
 
-      {/* Wellness Metrics */}
       <div className="space-y-6 mb-6 p-5 rounded-xl glass border border-border/50">
         <h4 className="font-display font-bold text-lg mb-4">Daily Wellness Metrics</h4>
-        
-        {/* Sleep */}
+
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Sleep (hours)</label>
@@ -276,7 +224,6 @@ export const MoodSelector = () => {
           />
         </div>
 
-        {/* Physical Activity */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Physical Activity (minutes)</label>
@@ -293,11 +240,12 @@ export const MoodSelector = () => {
           />
         </div>
 
-        {/* Screen Time */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Screen Time (minutes)</label>
-            <span className="text-sm text-muted-foreground">{screenTime} min ({(screenTime / 60).toFixed(1)}h)</span>
+            <span className="text-sm text-muted-foreground">
+              {screenTime} min ({(screenTime / 60).toFixed(1)}h)
+            </span>
           </div>
           <input
             type="range"
@@ -310,11 +258,12 @@ export const MoodSelector = () => {
           />
         </div>
 
-        {/* Hydration */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Hydration (ml)</label>
-            <span className="text-sm text-muted-foreground">{hydration} ml ({(hydration / 1000).toFixed(1)}L)</span>
+            <span className="text-sm text-muted-foreground">
+              {hydration} ml ({(hydration / 1000).toFixed(1)}L)
+            </span>
           </div>
           <input
             type="range"
@@ -327,7 +276,6 @@ export const MoodSelector = () => {
           />
         </div>
 
-        {/* Location */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Location (optional)</label>
           <input
@@ -347,8 +295,8 @@ export const MoodSelector = () => {
         className="mb-6 min-h-[120px] rounded-xl"
       />
 
-      <Button onClick={handleSave} className="w-full" size="lg">
-        Save Mood Entry
+      <Button onClick={handleSave} disabled={saving} className="w-full" size="lg">
+        {saving ? "Saving..." : "Save Mood Entry"}
       </Button>
     </Card>
   );

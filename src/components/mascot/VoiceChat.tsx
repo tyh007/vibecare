@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Volume2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { getErrorMessage } from "@/types/wellbeing";
+import { aiService } from "@/services/ai";
+import { ApiError } from "@/services/http";
 
 interface SpeechRecognitionResultEvent {
   results: ArrayLike<ArrayLike<{ transcript: string }>>;
@@ -96,32 +96,24 @@ export const VoiceChat = ({ partnerName, partnerType, mood, onSpeakingChange }: 
 
   const handleUserSpeech = async (text: string) => {
     try {
-      console.log('Sending message to AI:', text);
-      
-      const { data, error } = await supabase.functions.invoke('vibe-partner-chat', {
-        body: { 
-          message: text,
-          partnerName,
-          partnerType,
-          mood
-        }
+      const data = await aiService.partner({
+        message: text,
+        partnerName,
+        partnerType,
+        mood,
       });
 
-      if (error) throw error;
-
-      if (data?.response) {
-        console.log('AI response:', data.response);
+      if (data.response) {
         await speak(data.response);
 
-        // Surface additional support when the prototype detects concerning language.
         if (data.suggestProfessionalHelp) {
           toast({
             title: "Additional support may help",
             description: "Consider contacting someone you trust or a qualified support service.",
             action: (
-              <Button 
-                size="sm" 
-                onClick={() => navigate('/cbt-therapist')}
+              <Button
+                size="sm"
+                onClick={() => navigate("/cbt-therapist")}
               >
                 Open Reflection Tool
               </Button>
@@ -131,11 +123,12 @@ export const VoiceChat = ({ partnerName, partnerType, mood, onSpeakingChange }: 
         }
       }
     } catch (error: unknown) {
-      console.error('Error getting AI response:', error);
+      const message =
+        error instanceof ApiError ? error.message : "Could not get a response. Please try again.";
       toast({
         title: "Chat Error",
-        description: getErrorMessage(error, "Could not get a response. Please try again."),
-        variant: "destructive"
+        description: message,
+        variant: "destructive",
       });
     }
   };

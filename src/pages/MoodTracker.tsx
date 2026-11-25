@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { MoodSelector } from "@/components/MoodSelector";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Heart, Moon, Activity, Smartphone, Droplet, MapPin } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { moodService, type VibecareMood } from "@/services/moods";
 
 interface MoodEntry {
   id?: string;
@@ -33,57 +34,41 @@ const moodEmojis: { [key: number]: string } = {
 
 const MoodTracker = () => {
   const navigate = useNavigate();
-  const [entries, setEntries] = useState<MoodEntry[]>([]);
+  const [localEntries, setLocalEntries] = useState<MoodEntry[]>([]);
 
+  const moodsQuery = useQuery({
+    queryKey: ["moods", "recent"],
+    queryFn: () => moodService.list({ limit: 20 }),
+    refetchInterval: 30_000,
+  });
+
+  // One-shot hydration from legacy localStorage; kept so users with old data
+  // still see something on first load.
   useEffect(() => {
-    const loadEntries = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Load from database if logged in
-        const { data, error } = await supabase
-          .from("mood_entries")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(20);
-
-        if (data && !error) {
-          // If no database entries, show localStorage as fallback
-          if (data.length === 0) {
-            const savedEntries = JSON.parse(localStorage.getItem("moodEntries") || "[]");
-            setEntries(savedEntries);
-          } else {
-            setEntries(data);
-          }
-        }
-      } else {
-        // Fallback to localStorage if not logged in
-        const savedEntries = JSON.parse(localStorage.getItem("moodEntries") || "[]");
-        setEntries(savedEntries);
-      }
-    };
-
-    loadEntries();
-    
-    // Set up realtime subscription
-    const channel = supabase
-      .channel('mood_entries_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'mood_entries'
-        },
-        () => loadEntries()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    try {
+      const saved = JSON.parse(localStorage.getItem("moodEntries") || "[]");
+      if (Array.isArray(saved) && saved.length > 0) setLocalEntries(saved);
+    } catch {
+      /* ignore */
+    }
   }, []);
+
+  const entries: Array<MoodEntry & { created_at?: string }> =
+    moodsQuery.data && moodsQuery.data.length > 0
+      ? moodsQuery.data.map((m: VibecareMood) => ({
+          id: m.id,
+          mood: m.mood,
+          note: m.notes ?? undefined,
+          reasons: [],
+          timestamp: m.created_at,
+          created_at: m.created_at,
+          sleep: m.sleep_hours ?? undefined,
+          activity: m.physical_activity_minutes ?? undefined,
+          screenTime: m.screen_time_minutes ?? undefined,
+          hydration: m.hydration_ml ?? undefined,
+          location: m.location ?? undefined,
+        }))
+      : localEntries;
 
   return (
     <div className="min-h-screen bg-forest">

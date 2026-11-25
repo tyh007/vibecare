@@ -14,6 +14,7 @@ import { VibePartner } from "@/components/mascot/VibePartner";
 import { useRewardSystem } from "@/hooks/useRewardSystem";
 import { format, subDays, parseISO } from "date-fns";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { useAuth } from "@/auth/useAuth";
 
 interface MoodEntry {
   date: string;
@@ -34,6 +35,7 @@ interface CalendarEvent {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const { toast } = useToast();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
@@ -68,15 +70,7 @@ const Dashboard = () => {
         localStorage.removeItem("vc_moods");
       }
     }
-    return [
-      { date: format(subDays(new Date(), 6), 'yyyy-MM-dd'), mood: 3, events: ['CS101 Lecture', 'Study Group'] },
-      { date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), mood: 4, events: ['Gym', 'Coffee with friends'] },
-      { date: format(subDays(new Date(), 4), 'yyyy-MM-dd'), mood: 3, events: ['Statistics Exam', 'Library Session'] },
-      { date: format(subDays(new Date(), 3), 'yyyy-MM-dd'), mood: 4, events: ['CS Lab', 'Meditation'] },
-      { date: format(subDays(new Date(), 2), 'yyyy-MM-dd'), mood: 4, events: ['Group Project', 'Yoga Class'] },
-      { date: format(subDays(new Date(), 1), 'yyyy-MM-dd'), mood: 5, events: ['Volunteer Work', 'Movie Night'] },
-      { date: format(new Date(), 'yyyy-MM-dd'), mood: 5, events: ['Morning Walk', 'Productive Study Session'] },
-    ];
+    return [];
   });
 
   const [events, setEvents] = useState<CalendarEvent[]>(() => {
@@ -88,26 +82,7 @@ const Dashboard = () => {
         localStorage.removeItem("vc_events");
       }
     }
-    return [
-      {
-        id: '1',
-        title: 'Introduction to Psychology',
-        start: '2024-03-25T09:00',
-        end: '2024-03-25T10:30',
-        date: '2024-03-25',
-        category: 'academic',
-        color: '#8b5cf6'
-      },
-      {
-        id: '2',
-        title: 'Calculus II',
-        start: '2024-03-25T14:00',
-        end: '2024-03-25T15:30',
-        date: '2024-03-25',
-        category: 'academic',
-        color: '#8b5cf6'
-      }
-    ];
+    return [];
   });
 
   useEffect(() => {
@@ -198,12 +173,13 @@ const Dashboard = () => {
     });
   };
 
-  const handleLogout = () => {
-    navigate('/auth');
+  const handleLogout = async () => {
+    await signOut();
     toast({
       title: "Logged out",
       description: "See you next time!",
     });
+    navigate("/auth", { replace: true });
   };
 
   const handleViewChange = (view: 'day' | 'week' | 'month') => {
