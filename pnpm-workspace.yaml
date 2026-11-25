@@ -1,6 +1,10 @@
+packages:
+  - server
+
 allowBuilds:
   "@swc/core": true
   esbuild: true
+  better-sqlite3: true
 
 # Patched transitive parsers used by the Tailwind build pipeline.
 overrides:

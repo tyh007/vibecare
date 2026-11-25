@@ -5,9 +5,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Send, Brain, Shield, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getErrorMessage } from "@/types/wellbeing";
+import { aiService } from "@/services/ai";
+import { ApiError } from "@/services/http";
+import { CBT_GREETING } from "@/data/cbtGreeting";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,7 +22,7 @@ const CBTTherapist = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hello — I can guide you through a short CBT-informed reflection. I am an AI prototype, not a therapist or crisis service. What has been on your mind today?",
+      content: CBT_GREETING,
       timestamp: new Date()
     }
   ]);
@@ -49,19 +50,15 @@ const CBTTherapist = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('cbt-therapist-chat', {
-        body: { 
-          message: userMessage.content,
-          conversationHistory: messages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
-        }
+      const data = await aiService.cbt({
+        message: userMessage.content,
+        conversationHistory: messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
       });
 
-      if (error) throw error;
-
-      if (data?.response) {
+      if (data.response) {
         const assistantMessage: Message = {
           role: 'assistant',
           content: data.response,
@@ -70,13 +67,13 @@ const CBTTherapist = () => {
         setMessages(prev => [...prev, assistantMessage]);
       }
     } catch (error: unknown) {
-      console.error('Error getting therapist response:', error);
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : "Could not reach the guided reflection service. Please try again.";
       toast({
         title: "Connection Error",
-        description: getErrorMessage(
-          error,
-          "Could not reach the guided reflection service. Please try again.",
-        ),
+        description: message,
         variant: "destructive"
       });
     } finally {

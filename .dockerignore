@@ -1,0 +1,17 @@
+.git/
+**/node_modules/
+dist/
+.env
+.env.local
+.DS_Store
+*.log
+coverage/
+.vscode/
+.idea/
+
+# Build outputs from the web stage
+server/dist/
+server/data/
+server/.env
+server/.env.*
+!server/.env.example

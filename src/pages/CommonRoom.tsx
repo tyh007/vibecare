@@ -1,188 +1,98 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Send, AlertTriangle, Shield } from "lucide-react";
 import { format } from "date-fns";
 
-interface Message {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  flagged: boolean;
-  flag_severity: string | null;
-  profiles: {
-    display_name: string;
-  };
-}
+import { useAuth } from "@/auth/useAuth";
+import {
+  communityService,
+  type VibecareCommunityMessage,
+} from "@/services/community";
+import { useEventSource } from "@/hooks/useEventSource";
+import { ApiError } from "@/services/http";
 
 const CommonRoom = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
+
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  const messagesQuery = useQuery({
+    queryKey: ["community", "messages"],
+    queryFn: () => communityService.list({ limit: 100 }),
+  });
+
+  const messages = useMemo(
+    () => (messagesQuery.data ?? []).slice().reverse(),
+    [messagesQuery.data],
+  );
+
+  // Subscribe to the SSE stream; when a "message" event lands, invalidate
+  // the messages query so the next render shows the new row.
+  const { last: streamEvent, status: streamStatus } = useEventSource<{
+    op: "create" | "update" | "delete";
+    message?: VibecareCommunityMessage;
+    id?: string;
+  }>("/api/community/stream", Boolean(currentUserId));
+
+  useEffect(() => {
+    if (streamEvent) {
+      void queryClient.invalidateQueries({ queryKey: ["community", "messages"] });
+    }
+  }, [streamEvent, queryClient]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    // Check authentication and get current user
-    const checkAuth = async () => {
-      setIsCheckingAuth(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate('/auth');
-        return;
-      }
-      
-      setCurrentUserId(session.user.id);
-      setIsCheckingAuth(false);
-      
-      // Load initial messages only after auth is confirmed
-      loadMessages();
-    };
-
-    checkAuth();
-
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        navigate('/auth');
-      } else if (session) {
-        setCurrentUserId(session.user.id);
-      }
-    });
-
-    // Subscribe to new messages
-    const channel = supabase
-      .channel('community-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'community_messages'
-        },
-        () => {
-          loadMessages();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-    // Realtime subscriptions call the latest loader; recreating them on each
-    // render would produce duplicate channels.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
-
-  useEffect(() => {
-    scrollToBottom();
   }, [messages]);
 
-  const loadMessages = async () => {
-    const { data, error } = await supabase
-      .from('community_messages')
-      .select(`
-        id,
-        content,
-        created_at,
-        user_id,
-        flagged,
-        flag_severity
-      `)
-      .order('created_at', { ascending: true })
-      .limit(100);
-
-    if (error) {
-      console.error('Error loading messages:', error);
-      toast({
-        title: "Error loading messages",
-        description: error.message,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Fetch display names using the security definer function
-    const messagesWithProfiles = await Promise.all(
-      (data || []).map(async (msg) => {
-        const { data: profileData } = await supabase.rpc('get_public_profile', {
-          profile_user_id: msg.user_id
-        });
-        return {
-          ...msg,
-          profiles: {
-            display_name: profileData?.[0]?.display_name || 'Anonymous'
-          }
-        };
-      })
-    );
-
-    setMessages(messagesWithProfiles as Message[]);
-  };
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !currentUserId) return;
-
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const content = newMessage.trim();
+    if (!content) return;
     setIsLoading(true);
-
     try {
-      // Insert message
-      const { data: insertedMessage, error: insertError } = await supabase
-        .from('community_messages')
-        .insert({
-          content: newMessage,
-          user_id: currentUserId
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      // Moderate the message in background
-      const { data: moderation } = await supabase.functions.invoke('moderate-message', {
-        body: { 
-          message: newMessage,
-          userId: currentUserId
-        }
-      });
-
-      console.log('Moderation result:', moderation);
-
-      // If flagged as critical, show alert to user
-      if (moderation?.requiresIntervention) {
+      const result = await communityService.send(content);
+      if (result.moderation.requiresIntervention) {
         toast({
           title: "We're here for you",
-          description: "Automated moderation marked this message as potentially concerning. Consider contacting someone you trust or a qualified crisis service.",
+          description:
+            "Automated moderation marked this message as potentially concerning. Consider contacting someone you trust or a qualified crisis service.",
           variant: "destructive",
           action: (
-            <Button variant="outline" size="sm" onClick={() => navigate('/cbt-therapist')}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/cbt-therapist")}
+            >
               Open Reflection Tool
             </Button>
           ),
         });
+      } else if (result.moderation.moderationUnavailable) {
+        toast({
+          title: "Posted without review",
+          description:
+            "Moderation is temporarily unavailable — your message went through without automated review.",
+        });
       }
-
       setNewMessage("");
-    } catch (error) {
-      console.error('Error sending message:', error);
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError ? err.message : "Could not send your message.";
       toast({
         title: "Error sending message",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive"
+        description: message,
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -191,35 +101,27 @@ const CommonRoom = () => {
 
   const getSeverityColor = (severity: string | null) => {
     switch (severity) {
-      case 'critical': return 'border-red-500 bg-red-50 dark:bg-red-950';
-      case 'high': return 'border-orange-500 bg-orange-50 dark:bg-orange-950';
-      case 'medium': return 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950';
-      case 'low': return 'border-blue-500 bg-blue-50 dark:bg-blue-950';
-      default: return '';
+      case "critical":
+        return "border-red-500 bg-red-50 dark:bg-red-950";
+      case "high":
+        return "border-orange-500 bg-orange-50 dark:bg-orange-950";
+      case "medium":
+        return "border-yellow-500 bg-yellow-50 dark:bg-yellow-950";
+      case "low":
+        return "border-blue-500 bg-blue-50 dark:bg-blue-950";
+      default:
+        return "";
     }
   };
 
-  // Show loading state while checking authentication
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-forest">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-forest">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-card/75 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate("/dashboard")}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -228,13 +130,23 @@ const CommonRoom = () => {
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
               <h1 className="text-xl font-bold text-foreground">Community Room</h1>
+              <span
+                aria-hidden
+                title={`stream ${streamStatus}`}
+                className={`ml-2 inline-block w-2 h-2 rounded-full ${
+                  streamStatus === "open"
+                    ? "bg-success"
+                    : streamStatus === "connecting"
+                    ? "bg-yellow-400"
+                    : "bg-destructive"
+                }`}
+              />
             </div>
-            <div className="w-32" /> {/* Spacer for centering */}
+            <div className="w-32" />
           </div>
         </div>
       </header>
 
-      {/* Safety Notice */}
       <div className="container mx-auto px-4 py-4">
         <Card className="p-4 bg-primary/10 border-primary/20">
           <div className="flex gap-3">
@@ -253,51 +165,65 @@ const CommonRoom = () => {
         </Card>
       </div>
 
-      {/* Messages Container */}
       <div className="flex-1 container mx-auto px-4 pb-4 overflow-hidden flex flex-col">
         <Card className="flex-1 bg-card/75 backdrop-blur-sm overflow-hidden flex flex-col">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.user_id === currentUserId ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[70%] ${message.user_id === currentUserId ? 'text-right' : 'text-left'}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-xs text-muted-foreground">
-                      {message.profiles?.display_name || 'Anonymous'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(message.created_at), 'HH:mm')}
-                    </p>
-                    {message.flagged && (
-                      <AlertTriangle className="w-3 h-3 text-orange-500" />
-                    )}
-                  </div>
+            {messagesQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Loading messages…
+              </p>
+            ) : messages.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Be the first to share something.
+              </p>
+            ) : (
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.user_id === currentUserId ? "justify-end" : "justify-start"
+                  }`}
+                >
                   <div
-                    className={`inline-block rounded-lg px-4 py-2 ${
-                      message.user_id === currentUserId
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    } ${message.flagged ? `border-2 ${getSeverityColor(message.flag_severity)}` : ''}`}
+                    className={`max-w-[70%] ${
+                      message.user_id === currentUserId ? "text-right" : "text-left"
+                    }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs text-muted-foreground">
+                        {message.display_name || "Anonymous"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(message.created_at), "HH:mm")}
+                      </p>
+                      {message.flagged ? (
+                        <AlertTriangle className="w-3 h-3 text-orange-500" />
+                      ) : null}
+                    </div>
+                    <div
+                      className={`inline-block rounded-lg px-4 py-2 ${
+                        message.user_id === currentUserId
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      } ${
+                        message.flagged
+                          ? `border-2 ${getSeverityColor(message.flag_severity)}`
+                          : ""
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {message.content}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
           <div className="p-4 border-t border-border bg-card/50">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              className="flex gap-2"
-            >
+            <form onSubmit={handleSendMessage} className="flex gap-2">
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}

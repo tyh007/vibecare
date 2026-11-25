@@ -142,9 +142,8 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-display font-bold text-card-foreground">Privacy-First Design</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Account-scoped data access, explicit preferences, and a
-                documented Supabase policy model make privacy decisions visible
-                in the prototype.
+                The self-hosted app stores mood and calendar records in SQLite.
+                The API controls access by account.
               </p>
             </Card>
 
@@ -244,7 +243,7 @@ const Index = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground pt-4">
-              Portfolio prototype • Supabase configuration required
+              Portfolio prototype • Self-hosted with Hono and SQLite
             </p>
           </Card>
         </div>

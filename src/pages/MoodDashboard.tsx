@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ interface LocationStats {
 
 const MoodDashboard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [locationData, setLocationData] = useState<LocationChartDatum[]>([]);
   const [mapLocationData, setMapLocationData] = useState<MapLocationDatum[]>([]);
 
@@ -185,7 +187,12 @@ const MoodDashboard = () => {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <MoodChart />
-            <MoodSelector />
+            <MoodSelector
+              onSaved={() => {
+                void queryClient.invalidateQueries({ queryKey: ["moods"] });
+                void queryClient.invalidateQueries({ queryKey: ["profile"] });
+              }}
+            />
           </div>
         </section>
 

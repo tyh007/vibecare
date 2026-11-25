@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Heart } from "lucide-react";
-import { getErrorMessage } from "@/types/wellbeing";
+import { ApiError } from "@/services/http";
+import { shopService } from "@/services/shop";
+import { inventoryService } from "@/services/inventory";
+import { profileService } from "@/services/profile";
 
 interface ShopItem {
   id: string;
@@ -177,60 +179,50 @@ const Shop = () => {
   }, []);
 
   const loadShopData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const [shopItems, profile, userInventory] = await Promise.all([
+      shopService.list(),
+      profileService.getSelf(),
+      inventoryService.list(),
+    ]);
 
-    const { data: shopItems } = await supabase
-      .from("shop_items")
-      .select("*")
-      .order("category", { ascending: true })
-      .order("price", { ascending: true });
+    setItems(shopItems);
 
-    if (shopItems) setItems(shopItems);
+    setCoins(profile.coins);
+    setCurrentEquipped({
+      hairstyle: profile.hairstyle,
+      hair: profile.hair_color,
+      eye_color: profile.eye_color,
+      top: profile.top,
+      bottom: profile.bottom,
+      accessory: profile.accessory,
+    });
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("coins, hair_color, hairstyle, eye_color, top, bottom, accessory")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const inventoryIds = userInventory.map((i) => i.item_id);
+    setInventory(inventoryIds);
 
-    if (profile) {
-      setCoins(profile.coins || 0);
-      setCurrentEquipped({
-        hairstyle: profile.hairstyle || "long",
-        hair: profile.hair_color || "brown",
-        eye_color: profile.eye_color || "brown_eyes",
-        top: profile.top || "basic_shirt",
-        bottom: profile.bottom || "basic_pants",
-        accessory: profile.accessory || "none"
-      });
-    }
-
-    const { data: userInventory } = await supabase
-      .from("user_inventory")
-      .select("item_id")
-      .eq("user_id", user.id);
-
-    if (userInventory) {
-      const inventoryIds = userInventory.map(item => item.item_id);
-      setInventory(inventoryIds);
-      
-      if (shopItems) {
-        const ownedItems = shopItems
-          .filter(item => inventoryIds.includes(item.id))
-          .map(item => ({
-            ...item,
-            isEquipped: item.icon === currentEquipped[item.category as keyof typeof currentEquipped]
-          }));
-        setInventoryItems(ownedItems);
-      }
-    }
+    const ownedItems = shopItems
+      .filter((item) => inventoryIds.includes(item.id))
+      .map((item) => ({
+        ...item,
+        isEquipped:
+          item.category === "hairstyle" && currentEquipped.hairstyle === item.id
+            ? true
+            : item.category === "hair_color" && currentEquipped.hair === item.id
+            ? true
+            : item.category === "eye_color" && currentEquipped.eye_color === item.id
+            ? true
+            : item.category === "top" && currentEquipped.top === item.id
+            ? true
+            : item.category === "bottom" && currentEquipped.bottom === item.id
+            ? true
+            : item.category === "accessory" && currentEquipped.accessory === item.id
+            ? true
+            : false,
+      }));
+    setInventoryItems(ownedItems);
   };
 
   const handlePurchase = async (item: ShopItem) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     if (coins < item.price) {
       toast({
         title: "Not enough stars! ⭐",
@@ -243,29 +235,20 @@ const Shop = () => {
     setLoading(item.id);
 
     try {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ coins: coins - item.price })
-        .eq("user_id", user.id);
-
-      if (updateError) throw updateError;
-
-      const { error: inventoryError } = await supabase
-        .from("user_inventory")
-        .insert({ user_id: user.id, item_id: item.id });
-
-      if (inventoryError) throw inventoryError;
+      await inventoryService.purchase(item.id);
 
       toast({
         title: "Purchase successful! 🎉",
         description: `You bought ${item.name}! Head to Dress Up to wear it.`,
       });
 
-      loadShopData();
+      void loadShopData();
     } catch (error: unknown) {
+      const message =
+        error instanceof ApiError ? error.message : "Purchase failed. Please try again.";
       toast({
         title: "Purchase failed",
-        description: getErrorMessage(error),
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -274,13 +257,10 @@ const Shop = () => {
   };
 
   const handleEquip = async (item: InventoryItem) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     try {
       let updateField: "hairstyle" | "hair_color" | "eye_color" | "top" | "bottom" | "accessory";
       let newValue: string;
-      
+
       // Map category to database field
       switch (item.category) {
         case "hairstyle":
@@ -304,31 +284,23 @@ const Shop = () => {
         default:
           throw new Error(`Unsupported shop category: ${item.category}`);
       }
-      
+
       // Toggle equip/unequip
       if (item.isEquipped) {
-        // Get default value for each category
         const defaults: Record<string, string> = {
           hairstyle: "long",
           hair_color: "brown",
           eye_color: "brown_eyes",
           top: "basic_shirt",
           bottom: "basic_pants",
-          accessory: "none"
+          accessory: "none",
         };
         newValue = defaults[updateField] || "none";
       } else {
-        newValue = item.icon;
+        newValue = item.id;
       }
-      
-      const profileUpdate: { hairstyle?: string; hair_color?: string; eye_color?: string; top?: string; bottom?: string; accessory?: string } = {};
-      profileUpdate[updateField] = newValue;
-      const { error } = await supabase
-        .from("profiles")
-        .update(profileUpdate)
-        .eq("user_id", user.id);
 
-      if (error) throw error;
+      await inventoryService.equip(updateField, newValue);
 
       toast({
         title: item.isEquipped ? "Item removed! 👋" : "Item equipped! ✨",
@@ -337,9 +309,10 @@ const Shop = () => {
 
       await loadShopData();
     } catch (error: unknown) {
+      const message = error instanceof ApiError ? error.message : "Could not equip.";
       toast({
         title: "Error",
-        description: getErrorMessage(error),
+        description: message,
         variant: "destructive",
       });
     }

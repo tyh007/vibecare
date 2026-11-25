@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { profileService } from "@/services/profile";
 
 interface PixelAvatarProps {
   size?: "small" | "medium" | "large";
@@ -42,51 +42,25 @@ export const PixelAvatar = ({ size = "medium", showCoins = true }: PixelAvatarPr
   };
 
   useEffect(() => {
+    let cancelled = false;
     const loadProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("hair_color, hairstyle, eye_color, top, bottom, accessory, coins")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (profile) {
-        console.log("PixelAvatar - Loading profile:", profile);
-        setHairColor(profile.hair_color || "brown");
-        setHairstyle(profile.hairstyle || "long");
-        setEyeColor(profile.eye_color || "brown_eyes");
-        setTop(profile.top || "basic_shirt");
-        setBottom(profile.bottom || "basic_pants");
-        setAccessory(profile.accessory || "none");
-        setCoins(profile.coins || 0);
+      try {
+        const profile = await profileService.getSelf();
+        if (cancelled) return;
+        setHairColor(profile.hair_color);
+        setHairstyle(profile.hairstyle);
+        setEyeColor(profile.eye_color);
+        setTop(profile.top);
+        setBottom(profile.bottom);
+        setAccessory(profile.accessory);
+        setCoins(profile.coins);
+      } catch {
+        /* user signed out — leave defaults */
       }
     };
-
-    loadProfile();
-
-    const channel = supabase
-      .channel('profile-updates-realtime')
-      .on(
-        'postgres_changes',
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'profiles'
-        },
-        (payload) => {
-          console.log("PixelAvatar - Realtime update received:", payload);
-          loadProfile();
-        }
-      )
-      .subscribe((status) => {
-        console.log("PixelAvatar - Subscription status:", status);
-      });
-
-    return () => { 
-      console.log("PixelAvatar - Cleaning up channel");
-      supabase.removeChannel(channel); 
+    void loadProfile();
+    return () => {
+      cancelled = true;
     };
   }, []);
 

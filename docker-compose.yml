@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    image: vibecare:latest
+    container_name: vibecare-app
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      PORT: "8787"
+      AUTH_SECRET: "${AUTH_SECRET:?Set AUTH_SECRET before running Compose}"
+      AI_KEY_PASSPHRASE: "${AI_KEY_PASSPHRASE:?Set AI_KEY_PASSPHRASE before running Compose}"
+      DB_PATH: "/app/server/data/vibecare.db"
+      LOG_LEVEL: "info"
+    volumes:
+      # Persist the SQLite file + (later) per-user AI keys.
+      - ./server/data:/app/server/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

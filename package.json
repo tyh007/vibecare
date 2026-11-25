@@ -6,11 +6,16 @@
   "packageManager": "pnpm@11.7.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
+    "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @vibecare/server dev\" \"vite\"",
+    "dev:web": "vite",
+    "dev:server": "pnpm --filter @vibecare/server dev",
+    "build": "pnpm --filter @vibecare/server build && vite build",
+    "build:web": "vite build",
+    "build:server": "pnpm --filter @vibecare/server build",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json && pnpm --filter @vibecare/server typecheck",
     "lint": "eslint .",
-    "check": "pnpm run typecheck && pnpm run lint && pnpm run build",
+    "test": "pnpm --filter @vibecare/server test",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -74,6 +79,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.6.1",
+    "concurrently": "^9.1.0",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.26",

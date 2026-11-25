@@ -1,21 +1,29 @@
-import { ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
+/**
+ * Shared shell for protected routes. Supports two modes:
+ *  1. **Layout route mode** (RR `<Route element={<Layout/>}>`): nested routes
+ *     render through `<Outlet />`. Sidebar shows for normal app pages.
+ *  2. **Direct children mode** (legacy): pass `children` and they render
+ *     in place of the Outlet. The `noLayoutPages` filter still applies.
+ *
+ * Routes that should NOT show the sidebar (`/`, `/auth`, `/onboarding`)
+ * render bare, with just a page-transition wrapper.
+ */
 interface LayoutProps {
-  children: ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
-  
-  // Pages that don't need the standard layout (like auth, onboarding, landing)
+
   const noLayoutPages = ["/", "/auth", "/onboarding"];
   const shouldShowLayout = !noLayoutPages.includes(location.pathname);
 
   if (!shouldShowLayout) {
-    return <div className="page-transition">{children}</div>;
+    return <div className="page-transition">{children ?? <Outlet />}</div>;
   }
 
   return (
@@ -27,7 +35,7 @@ export const Layout = ({ children }: LayoutProps) => {
             <SidebarTrigger className="hover:bg-muted/50 rounded-lg transition-all" />
           </header>
           <main className="min-w-0 flex-1 overflow-auto page-transition">
-            {children}
+            {children ?? <Outlet />}
           </main>
         </div>
       </div>
